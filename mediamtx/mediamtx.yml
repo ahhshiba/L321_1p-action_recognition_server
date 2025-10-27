@@ -1,0 +1,7 @@
+rtsp: yes
+rtspAddress: :8554
+paths:
+  cam1_raw:
+    sourceOnDemand: no
+  cam1_overlay:
+    sourceOnDemand: no

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "minor_version": 12,
+  "key": "core.device_registry",
+  "data": {
+    "devices": [
+      {"area_id":null,"config_entries":["01K87XV23G43PR4MT2HRSJKH88"],"config_entries_subentries":{"01K87XV23G43PR4MT2HRSJKH88":[null]},"configuration_url":null,"connections":[],"created_at":"2025-10-23T06:59:27.985469+00:00","disabled_by":null,"entry_type":"service","hw_version":null,"id":"b04b669f510b0402c2f554b7323718cc","identifiers":[["sun","01K87XV23G43PR4MT2HRSJKH88"]],"labels":[],"manufacturer":null,"model":null,"model_id":null,"modified_at":"2025-10-23T06:59:27.985492+00:00","name_by_user":null,"name":"Sun","primary_config_entry":"01K87XV23G43PR4MT2HRSJKH88","serial_number":null,"sw_version":null,"via_device_id":null},
+      {"area_id":null,"config_entries":["01K87XV2A13B3NSD0ZCSZW9CAY"],"config_entries_subentries":{"01K87XV2A13B3NSD0ZCSZW9CAY":[null]},"configuration_url":null,"connections":[["bluetooth","1C:C1:0C:30:89:27"]],"created_at":"2025-10-23T06:59:28.193783+00:00","disabled_by":null,"entry_type":null,"hw_version":null,"id":"9613a74111dfea3c6a0851c3161a091f","identifiers":[],"labels":[],"manufacturer":"Intel Corporate","model":"Unknown","model_id":null,"modified_at":"2025-10-23T06:59:28.193809+00:00","name_by_user":null,"name":"hci0 (1C:C1:0C:30:89:27)","primary_config_entry":"01K87XV2A13B3NSD0ZCSZW9CAY","serial_number":null,"sw_version":"Unknown","via_device_id":null},
+      {"area_id":null,"config_entries":["01K87XV2A64TK1KQ2519VM9GC8"],"config_entries_subentries":{"01K87XV2A64TK1KQ2519VM9GC8":[null]},"configuration_url":"homeassistant://config/backup","connections":[],"created_at":"2025-10-23T06:59:28.213104+00:00","disabled_by":null,"entry_type":"service","hw_version":null,"id":"da62435584fab44e55ab691aad3e511e","identifiers":[["backup","backup_manager"]],"labels":[],"manufacturer":"Home Assistant","model":"Home Assistant Backup","model_id":null,"modified_at":"2025-10-23T06:59:28.213123+00:00","name_by_user":null,"name":"Backup","primary_config_entry":"01K87XV2A64TK1KQ2519VM9GC8","serial_number":null,"sw_version":"2025.9.4","via_device_id":null}
+    ],
+    "deleted_devices": []
+  }
+}

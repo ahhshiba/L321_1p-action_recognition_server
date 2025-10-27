@@ -1,0 +1,109 @@
+mqtt:
+  enabled: true
+
+go2rtc:
+  streams:
+    cam1_raw: rtsp://mediamtx:8554/cam1_raw
+  # 需要 RTSP 服務給外部拉流（預設 8554），不用改
+
+cameras:
+  # --- 原始畫面：做 YOLO 偵測 + 錄影 ---
+  cam1:
+    enabled: true
+    ffmpeg:
+      hwaccel_args: preset-vaapi
+      inputs:
+        - path: rtsp://mediamtx:8554/cam1_raw
+          roles: [detect, record]
+    detect:
+      enabled: true
+      width: 1280
+      height: 720
+    snapshots:
+      enabled: true
+      timestamp: true
+      bounding_box: true
+      crop: false
+      retain:
+        default: 7
+    motion:
+      threshold: 80
+      contour_area: 100
+      improve_contrast: true
+    objects:
+      track: [carrot, beverage, egg, tomato]   # 需要追蹤的類別
+      # 若要用 person 的 filter，請同時把 person 放進 track
+      filters:
+        person: {}
+    zones:
+      carrot:
+        coordinates: 0.105,0.045,0.459,0.063,0.461,0.455,0.13,0.481
+        inertia: 3
+        loitering_time: 0
+      beverage:
+        coordinates: 0.479,0.063,0.808,0.066,0.794,0.496,0.482,0.499
+        inertia: 3
+        loitering_time: 0
+      egg:
+        coordinates: 0.103,0.536,0.394,0.544,0.401,0.959,0.098,0.917
+        loitering_time: 0
+      box:
+        coordinates: 0.473,0.515,0.821,0.536,0.821,0.953,0.47,0.929
+        loitering_time: 0
+    review:
+      alerts: {}
+      detections: {}
+  cam1_overlay:
+    enabled: true
+    ffmpeg:
+      inputs:
+        # 若有用我給的 mediamtx 服務（compose 內叫 mediamtx）：
+        - path: rtsp://mediamtx:8554/cam1_overlay
+          roles: [live]
+        # 若你的前端跑在主機上，且把 mediamtx RTSP 映射到主機 8556，改用：
+        # - path: rtsp://127.0.0.1:8556/cam1_overlay
+        #   roles: [live]
+    detect:
+      enabled: false
+    record:
+      enabled: false
+    snapshots:
+      enabled: false
+
+# --- ONNX 偵測器與模型 ---
+#detectors:
+#  onnx:
+#    type: onnx
+#  ov:
+#    type: openvino
+#    device: GPU
+
+#model:
+#  model_type: yolo-generic
+#  width: 640
+#  height: 640
+#  input_tensor: nchw
+#  input_dtype: float
+#  path: /config/model_cache/food.onnx
+#  labelmap_path: /config/model_cache/food.txt
+
+detect:
+  enabled: true
+
+version: 0.16-0
+
+# 這些功能只有在你確定有啟用與需要時才保持 true（否則建議先關）
+semantic_search:
+  enabled: false
+  model_size: large
+
+face_recognition:
+  enabled: false
+  model_size: large
+
+lpr:
+  enabled: false
+
+classification:
+  bird:
+    enabled: false

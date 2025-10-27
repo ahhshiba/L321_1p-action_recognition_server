@@ -1,0 +1,88 @@
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./homeassistant/config:/config
+      - /etc/localtime:/etc/localtime:ro
+
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+  # 內部容器互連使用 8554；對外（主機）看 RTSP 則用 8556
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: mediamtx
+    restart: unless-stopped
+    ports:
+      - "8556:8554"   # host:container
+    volumes:
+      - ./mediamtx/mediamtx.yml:/mediamtx.yml:ro
+
+  # 從 /dev/video0 拉原始畫面 → 推到 cam1_raw，供 action_recognition_server 取用
+  raw_restreamer:
+    image: jrottenberg/ffmpeg:6.1-ubuntu
+    container_name: raw_restreamer
+    restart: unless-stopped
+    depends_on: [mediamtx]
+    devices:
+      - /dev/video0:/dev/video0
+    command: >
+      -f v4l2 -input_format yuyv422 -framerate 10 -video_size 640x480 -i /dev/video0
+      -vf format=yuv420p
+      -c:v libx264 -preset veryfast -tune zerolatency
+      -g 20 -keyint_min 20 -b:v 2M -maxrate 2M -bufsize 4M
+      -f rtsp rtsp://mediamtx:8554/cam1_raw
+
+  # 你的行為辨識前處理（疊字→回推 RTSP）
+  action_recognition_server:
+    build: .
+    container_name: action_recognition_server
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - mediamtx
+    devices:
+      - /dev/dri:/dev/dri      # Intel iGPU 給 VAAPI 用
+    # 可選：保命線
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "2.0"
+    #       memory: 2g
+
+  # Frigate 建議吃 overlay 後的串流（避免雙重解碼）
+  frigate:
+    image: ghcr.io/blakeblackshear/frigate:0.16.1
+    container_name: frigate
+    privileged: true
+    restart: unless-stopped
+    shm_size: "1gb"
+    devices:
+      - /dev/video0:/dev/video0   # 若不需要 USB cam 可拿掉
+    depends_on:
+      - mediamtx
+      - mosquitto
+    ports:
+      - "5000:5000"          # Frigate Web UI
+      - "8554:8554"          # go2rtc RTSP
+      - "8555:8555/tcp"      # go2rtc WebRTC/LL-HLS
+      - "8555:8555/udp"
+    environment:
+      FRIGATE_RTSP_PASSWORD: ""
+    volumes:
+      - ./frigate/config:/config
+      - ./frigate/media:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+      - /dev/bus/usb:/dev/bus/usb  # 有 Coral 再保留
