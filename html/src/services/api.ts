@@ -12,7 +12,7 @@ export const fetchCameras = async () => {
     }
 };
 
-export const fetchCameraDetails = async (cameraId) => {
+export const fetchCameraDetails = async (cameraId: string): Promise<any> => {
     try {
         const response = await axios.get(`${API_BASE_URL}/cameras/${cameraId}`);
         return response.data;
@@ -22,7 +22,7 @@ export const fetchCameraDetails = async (cameraId) => {
     }
 };
 
-export const updateCameraSettings = async (cameraId, settings) => {
+export const updateCameraSettings = async (cameraId: string, settings: any): Promise<any> => {
     try {
         const response = await axios.put(`${API_BASE_URL}/cameras/${cameraId}`, settings);
         return response.data;
@@ -31,3 +31,26 @@ export const updateCameraSettings = async (cameraId, settings) => {
         throw error;
     }
 };
+
+export async function safeFetch(input: RequestInfo, init?: RequestInit) {
+  const res = await fetch(input, init);
+  const ct = res.headers.get('content-type') || '';
+  const text = await res.text();
+
+  if (!res.ok) {
+    throw new Error(`Request failed ${res.status} ${res.statusText}: ${text}`);
+  }
+
+  if (!ct.includes('application/json')) {
+    throw new Error(`Expected JSON response but got "${ct}". Body: ${text}`);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error(`Failed to parse JSON: ${(err as Error).message}`);
+  }
+}
+
+// 示例：替換現有的 fetch 呼叫
+// const data = await safeFetch('/api/cameras');

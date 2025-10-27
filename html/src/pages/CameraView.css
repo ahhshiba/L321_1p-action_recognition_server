@@ -1,0 +1,37 @@
+/* CameraView 基本樣式 */
+.camera-view {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  align-items: flex-start;
+}
+
+.camera-view .player {
+  flex: 1;
+  min-height: 360px;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.camera-view .sidebar {
+  width: 320px;
+  max-height: 80vh;
+  overflow: auto;
+  background: #fafafa;
+  border-left: 1px solid #eee;
+  padding: 12px;
+}
+
+.camera-view .sidebar h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.camera-view .controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}

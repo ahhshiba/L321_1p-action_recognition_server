@@ -1,7 +1,11 @@
 import React from 'react';
+import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import CameraGrid from './components/CameraGrid';
 import EventList from './components/EventList';
+import CameraView from './pages/CameraView';
+import Dashboard from './pages/Dashboard';
+import Settings from './pages/Settings';
 import './styles/main.css';
 
 export default function App() {
@@ -9,10 +13,12 @@ export default function App() {
     <div className="app-root">
       <Navbar />
       <main style={{ padding: 16 }}>
-        <h2>攝影機總覽</h2>
-        <CameraGrid />
-        <h2 style={{ marginTop: 24 }}>事件列表</h2>
-        <EventList />
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/camera" element={<CameraView />} />
+          <Route path="/settings" element={<Settings />} />
+          {/* 如果需要可新增更多 route */}
+        </Routes>
       </main>
     </div>
   );
