@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>Action Recognition Overlay</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #0f172a;
+      color: #f8fafc;
+    }
+    main {
+      width: min(960px, 90vw);
+      padding: 2rem;
+      border-radius: 18px;
+      background: rgba(15, 23, 42, 0.85);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      text-align: center;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      letter-spacing: 0.05em;
+    }
+    video {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #1e293b;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.4);
+    }
+    #status {
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+      color: #e2e8f0;
+      min-height: 1.2em;
+    }
+    button {
+      padding: 0.75rem 1.8rem;
+      font-size: 1rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, #6366f1, #22d3ee);
+      color: #0f172a;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+    button:disabled {
+      filter: grayscale(0.4);
+      cursor: progress;
+      transform: none;
+      box-shadow: none;
+    }
+    button:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 24px rgba(99, 102, 241, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>行為辨識串流</h1>
+    <video id="overlayVideo" autoplay playsinline muted></video>
+    <div id="status"></div>
+    <button id="reconnect">重新連線</button>
+  </main>
+
+  <script>
+    const videoEl = document.getElementById("overlayVideo");
+    const statusEl = document.getElementById("status");
+    const reconnectBtn = document.getElementById("reconnect");
+
+    let pc;
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    async function connect() {
+      reconnectBtn.disabled = true;
+      setStatus("連線中...");
+
+      if (pc) {
+        try { pc.close(); } catch (err) { console.warn(err); }
+      }
+
+      pc = new RTCPeerConnection({
+        iceServers: []
+      });
+
+      pc.addTransceiver("video", { direction: "recvonly" });
+
+      pc.ontrack = (event) => {
+        videoEl.srcObject = event.streams[0];
+      };
+
+      pc.onconnectionstatechange = () => {
+        switch (pc.connectionState) {
+          case "connected":
+            setStatus("串流已連線。");
+            reconnectBtn.disabled = false;
+            break;
+          case "failed":
+            setStatus("連線失敗，請檢查 mediamtx 服務或網路。");
+            reconnectBtn.disabled = false;
+            break;
+          case "disconnected":
+          case "closed":
+            setStatus("連線中斷，可按下方按鈕重試。");
+            reconnectBtn.disabled = false;
+            break;
+          default:
+            break;
+        }
+      };
+
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        const endpoint = `/webrtc/cam1_overlay/whep`;
+
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/sdp"
+          },
+          body: offer.sdp
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} ${response.statusText}`);
+        }
+
+        const answer = await response.text();
+        await pc.setRemoteDescription({
+          type: "answer",
+          sdp: answer
+        });
+      } catch (err) {
+        console.error(err);
+        setStatus(`建立 WebRTC 連線時發生錯誤：${err.message}`);
+        reconnectBtn.disabled = false;
+        if (pc) {
+          try { pc.close(); } catch (_) { /* ignore */ }
+        }
+      }
+    }
+
+    reconnectBtn.addEventListener("click", () => {
+      connect().catch((err) => console.error("reconnect error", err));
+    });
+
+    connect().catch((err) => console.error("initial connect error", err));
+  </script>
+</body>
+</html>
