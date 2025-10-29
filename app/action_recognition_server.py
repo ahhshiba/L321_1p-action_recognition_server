@@ -8,6 +8,8 @@ import sys
 import time
 import cv2
 import numpy as np
+import threading
+from flask import Flask, Response
 
 def draw_overlay(frame: np.ndarray) -> np.ndarray:
     h, w = frame.shape[:2]
@@ -47,6 +49,25 @@ def open_capture(rtsp_url: str, force_tcp: bool) -> cv2.VideoCapture:
     except Exception: pass
     return cap
 
+app = Flask(__name__)
+_latest_frame = None
+_frame_lock = threading.Lock()
+
+@app.route('/stream.mjpg')
+def mjpeg_stream():
+    def generator():
+        boundary = b'--frame\r\nContent-Type: image/jpeg\r\n\r\n'
+        while True:
+            with _frame_lock:
+                frame = _latest_frame
+            if frame is None:
+                time.sleep(0.1)
+                continue
+            yield boundary + frame + b'\r\n'
+            # small throttle
+            time.sleep(max(0.01, 1.0 / (FPS if 'FPS' in globals() and FPS > 0 else 15)))
+    return Response(generator(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--in", dest="in_url", default="rtsp://127.0.0.1:8556/cam1_raw", help="輸入 RTSP (raw)")
@@ -64,6 +85,13 @@ def main():
     killer = GracefulKiller()
 
     open_fail_count = 0  # 連續「開 RTSP」失敗計數
+
+    # 啟動 Flask 在背景 thread（暴露 8000）
+    def run_flask():
+        app.run(host='0.0.0.0', port=8000, threaded=True)
+
+    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread.start()
 
     while not killer.stop:
         cap = open_capture(args.in_url, args.tcp_pull)
@@ -104,6 +132,15 @@ def main():
                     frame = cv2.resize(frame, (W, H), interpolation=cv2.INTER_LINEAR)
 
                 frame = draw_overlay(frame)
+
+                # 更新全域最新 JPEG，供 /stream.mjpg 使用
+                try:
+                    ret, jpeg = cv2.imencode('.jpg', frame)
+                    if ret:
+                        with _frame_lock:
+                            _latest_frame = jpeg.tobytes()
+                except Exception:
+                    pass
 
                 try:
                     ff.stdin.write(frame.tobytes())

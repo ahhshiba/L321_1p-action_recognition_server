@@ -1,14 +1,29 @@
-import { createStore } from 'redux';
+import { createStore, AnyAction } from 'redux';
+
+interface Camera {
+    id: string;
+    [key: string]: any;
+}
+
+interface EventItem {
+    [key: string]: any;
+}
+
+type RootState = {
+    cameras: Camera[];
+    events: EventItem[];
+    settings: Record<string, any>;
+};
 
 // Initial state
-const initialState = {
+const initialState: RootState = {
     cameras: [],
     events: [],
     settings: {}
 };
 
 // Reducer function
-const rootReducer = (state = initialState, action) => {
+const rootReducer = (state: RootState = initialState, action: AnyAction): RootState => {
     switch (action.type) {
         case 'ADD_CAMERA':
             return {

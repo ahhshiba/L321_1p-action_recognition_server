@@ -54,13 +54,27 @@ services:
     depends_on:
       - mediamtx
     devices:
-      - /dev/dri:/dev/dri      # Intel iGPU 給 VAAPI 用
-    # 可選：保命線
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: "2.0"
-    #       memory: 2g
+      - /dev/dri:/dev/dri
+    ports:
+      - "8000:8000"   # 對外提供 MJPEG 與 API
+
+  # 前端（build 後以 nginx/簡易 server 提供）
+  html:
+    build:
+      context: ./html
+      dockerfile: docker/Dockerfile
+      args:
+        VITE_STREAM_URL: ${VITE_STREAM_URL:-http://localhost:8000/stream.mjpg}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
+    container_name: action_frontend
+    restart: unless-stopped
+    depends_on:
+      - action_recognition_server
+    environment:
+      - VITE_STREAM_URL=http://localhost:8000/stream.mjpg
+      - VITE_API_BASE_URL=http://localhost:8000/api
+    ports:
+      - "3001:80"   # 調整為 html/docker/Dockerfile 的對外 port（預設用 80）
 
   # Frigate 建議吃 overlay 後的串流（避免雙重解碼）
   frigate:
