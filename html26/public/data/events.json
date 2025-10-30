@@ -1,0 +1,64 @@
+{
+  "events": [
+    {
+      "id": "evt_001",
+      "cameraId": "cam1",
+      "cameraName": "Front Door",
+      "type": "person",
+      "timestamp": "2025-01-30T14:23:15Z",
+      "thumbnail": "/data/events/evt_001.jpg",
+      "score": 0.95,
+      "zone": "entrance"
+    },
+    {
+      "id": "evt_002",
+      "cameraId": "cam2",
+      "cameraName": "Driveway",
+      "type": "car",
+      "timestamp": "2025-01-30T13:45:30Z",
+      "thumbnail": "/data/events/evt_002.jpg",
+      "score": 0.92,
+      "zone": "driveway"
+    },
+    {
+      "id": "evt_003",
+      "cameraId": "cam1",
+      "cameraName": "Front Door",
+      "type": "package",
+      "timestamp": "2025-01-30T12:10:45Z",
+      "thumbnail": "/data/events/evt_003.jpg",
+      "score": 0.88,
+      "zone": "entrance"
+    },
+    {
+      "id": "evt_004",
+      "cameraId": "cam3",
+      "cameraName": "Backyard",
+      "type": "dog",
+      "timestamp": "2025-01-30T11:30:20Z",
+      "thumbnail": "/data/events/evt_004.jpg",
+      "score": 0.91,
+      "zone": "yard"
+    },
+    {
+      "id": "evt_005",
+      "cameraId": "cam2",
+      "cameraName": "Driveway",
+      "type": "person",
+      "timestamp": "2025-01-30T10:15:00Z",
+      "thumbnail": "/data/events/evt_005.jpg",
+      "score": 0.94,
+      "zone": "driveway"
+    },
+    {
+      "id": "evt_006",
+      "cameraId": "cam4",
+      "cameraName": "Side Gate",
+      "type": "cat",
+      "timestamp": "2025-01-30T09:45:30Z",
+      "thumbnail": "/data/events/evt_006.jpg",
+      "score": 0.87,
+      "zone": "gate"
+    }
+  ]
+}
