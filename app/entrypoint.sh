@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -e
 
-IN_URL="${IN_URL:-rtsp://mediamtx:8554/cam1_raw}"
-OUT_URL="${OUT_URL:-rtsp://mediamtx:8554/cam1_overlay}"
+IN_URL="${IN_URL:-rtsp://publisher:secret@go2rtc:8554/cam1_raw}"
+OUT_URL="${OUT_URL:-rtsp://publisher:secret@go2rtc:8554/cam1_overlay}"
 W="${W:-1280}"
 H="${H:-720}"
 FPS="${FPS:-15}"
 RECONNECT_SEC="${RECONNECT_SEC:-2.0}"
-TCP_PULL="${TCP_PULL:-1}"
+TCP_PULL="${TCP_PULL:-0}"
 SHOW="${SHOW:-0}"
 MAX_OPEN_RETRIES="${MAX_OPEN_RETRIES:-10}"
 

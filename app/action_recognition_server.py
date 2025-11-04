@@ -6,7 +6,7 @@ import subprocess
 import signal
 import sys
 import time
-import cv2
+import cv2 
 import numpy as np
 
 def draw_overlay(frame: np.ndarray) -> np.ndarray:
@@ -49,8 +49,18 @@ def open_capture(rtsp_url: str, force_tcp: bool) -> cv2.VideoCapture:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--in", dest="in_url", default="rtsp://127.0.0.1:8556/cam1_raw", help="輸入 RTSP (raw)")
-    ap.add_argument("--out", dest="out_url", default="rtsp://127.0.0.1:8556/cam1_overlay", help="輸出 RTSP (overlay)")
+    ap.add_argument(
+        "--in",
+        dest="in_url",
+        default="rtsp://publisher:secret@go2rtc:8554/cam1_raw",
+        help="輸入 RTSP (raw)",
+    )
+    ap.add_argument(
+        "--out",
+        dest="out_url",
+        default="rtsp://publisher:secret@go2rtc:8554/cam1_overlay",
+        help="輸出 RTSP (overlay)",
+    )
     ap.add_argument("--w", type=int, default=1280)
     ap.add_argument("--h", type=int, default=720)
     ap.add_argument("--fps", type=int, default=15)

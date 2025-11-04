@@ -1,169 +1,224 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8" />
-  <title>Action Recognition Overlay</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root {
-      color-scheme: light dark;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #0f172a;
-      color: #f8fafc;
-    }
-    main {
-      width: min(960px, 90vw);
-      padding: 2rem;
-      border-radius: 18px;
-      background: rgba(15, 23, 42, 0.85);
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-      text-align: center;
-    }
-    h1 {
-      margin-top: 0;
-      font-size: clamp(1.6rem, 4vw, 2.2rem);
-      letter-spacing: 0.05em;
-    }
-    video {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      background: #1e293b;
-      border-radius: 12px;
-      margin: 1.5rem 0;
-      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.4);
-    }
-    #status {
-      margin-bottom: 1rem;
-      font-size: 0.95rem;
-      color: #e2e8f0;
-      min-height: 1.2em;
-    }
-    button {
-      padding: 0.75rem 1.8rem;
-      font-size: 1rem;
-      border-radius: 999px;
-      border: none;
-      cursor: pointer;
-      background: linear-gradient(135deg, #6366f1, #22d3ee);
-      color: #0f172a;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      transition: transform 120ms ease, box-shadow 120ms ease;
-    }
-    button:disabled {
-      filter: grayscale(0.4);
-      cursor: progress;
-      transform: none;
-      box-shadow: none;
-    }
-    button:not(:disabled):hover {
-      transform: translateY(-2px);
-      box-shadow: 0 16px 24px rgba(99, 102, 241, 0.3);
-    }
-  </style>
-</head>
-<body>
-  <main>
-    <h1>行為辨識串流</h1>
-    <video id="overlayVideo" autoplay playsinline muted></video>
-    <div id="status"></div>
-    <button id="reconnect">重新連線</button>
-  </main>
+  <head>
+    <meta charset="utf-8" />
+    <title>go2rtc WHEP Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #0f172a;
+        color: #f8fafc;
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 1.75rem;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+      label {
+        font-size: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      input {
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: rgba(15, 23, 42, 0.6);
+        color: inherit;
+        min-width: 220px;
+      }
+      button {
+        padding: 10px 18px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        background: #38bdf8;
+        color: #0f172a;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(56, 189, 248, 0.25);
+      }
+      button.secondary {
+        background: rgba(148, 163, 184, 0.25);
+        color: inherit;
+      }
+      video {
+        width: 100%;
+        max-width: 960px;
+        aspect-ratio: 16 / 9;
+        background: #020617;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        object-fit: contain;
+      }
+      .status {
+        margin-top: 12px;
+        font-size: 0.9rem;
+        color: #bae6fd;
+      }
+      .status.error {
+        color: #fca5a5;
+      }
+      .status.success {
+        color: #86efac;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>go2rtc WebRTC (WHEP) Viewer</h1>
+    <p>輸入要拉取的串流 ID（例如 <code>cam1_overlay</code>），點選「開始播放」即可使用 WHEP + WebRTC 觀看影像。</p>
 
-  <script>
-    const videoEl = document.getElementById("overlayVideo");
-    const statusEl = document.getElementById("status");
-    const reconnectBtn = document.getElementById("reconnect");
+    <div class="controls">
+      <label>
+        go2rtc API
+        <input
+          id="api-url"
+          type="text"
+          value="http://localhost:1984"
+          placeholder="http://localhost:1984"
+        />
+      </label>
+      <label>
+        Stream / src
+        <input id="stream-name" type="text" value="cam1_overlay" placeholder="cam1_overlay" />
+      </label>
+      <button id="start-btn">開始播放</button>
+      <button id="stop-btn" class="secondary">停止</button>
+    </div>
 
-    let pc;
+    <video id="player" autoplay playsinline muted></video>
+    <div id="status" class="status"></div>
 
-    function setStatus(message) {
-      statusEl.textContent = message;
-    }
+    <script>
+      let pc = null
 
-    async function connect() {
-      reconnectBtn.disabled = true;
-      setStatus("連線中...");
+      const statusEl = document.getElementById("status")
+      const startBtn = document.getElementById("start-btn")
+      const stopBtn = document.getElementById("stop-btn")
+      const player = document.getElementById("player")
+      const streamInput = document.getElementById("stream-name")
+      const apiInput = document.getElementById("api-url")
 
-      if (pc) {
-        try { pc.close(); } catch (err) { console.warn(err); }
+      function setStatus(message, type = "") {
+        statusEl.textContent = message || ""
+        statusEl.className = "status" + (type ? ` ${type}` : "")
       }
 
-      pc = new RTCPeerConnection({
-        iceServers: []
-      });
+      async function start() {
+        const streamId = streamInput.value.trim()
+        const apiUrl = apiInput.value.trim().replace(/\/$/, "")
 
-      pc.addTransceiver("video", { direction: "recvonly" });
-
-      pc.ontrack = (event) => {
-        videoEl.srcObject = event.streams[0];
-      };
-
-      pc.onconnectionstatechange = () => {
-        switch (pc.connectionState) {
-          case "connected":
-            setStatus("串流已連線。");
-            reconnectBtn.disabled = false;
-            break;
-          case "failed":
-            setStatus("連線失敗，請檢查 mediamtx 服務或網路。");
-            reconnectBtn.disabled = false;
-            break;
-          case "disconnected":
-          case "closed":
-            setStatus("連線中斷，可按下方按鈕重試。");
-            reconnectBtn.disabled = false;
-            break;
-          default:
-            break;
+        if (!streamId) {
+          setStatus("請輸入 stream 名稱", "error")
+          return
         }
-      };
-
-      try {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-
-        const endpoint = `/webrtc/cam1_overlay/whep`;
-
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/sdp"
-          },
-          body: offer.sdp
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status} ${response.statusText}`);
+        if (!apiUrl) {
+          setStatus("請輸入 go2rtc API 位址", "error")
+          return
         }
 
-        const answer = await response.text();
-        await pc.setRemoteDescription({
-          type: "answer",
-          sdp: answer
-        });
-      } catch (err) {
-        console.error(err);
-        setStatus(`建立 WebRTC 連線時發生錯誤：${err.message}`);
-        reconnectBtn.disabled = false;
+        stop()
+
+        try {
+          setStatus("建立 WebRTC 連線中…")
+
+          pc = new RTCPeerConnection({
+            iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+          })
+
+          pc.addTransceiver("video", { direction: "recvonly" })
+          pc.addTransceiver("audio", { direction: "recvonly" })
+
+          pc.ontrack = (event) => {
+            if (event.streams && event.streams[0]) {
+              player.srcObject = event.streams[0]
+              setStatus(`串流 ${streamId} 已連線`, "success")
+            }
+          }
+
+          pc.oniceconnectionstatechange = () => {
+            if (!pc) return
+            const state = pc.iceConnectionState
+            if (state === "failed" || state === "disconnected") {
+              setStatus("連線中斷，請重新開始。", "error")
+            }
+          }
+
+          const offer = await pc.createOffer()
+          await pc.setLocalDescription(offer)
+
+          const response = await fetch(`${apiUrl}/api/webrtc?src=${encodeURIComponent(streamId)}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              type: "offer",
+              sdp: offer.sdp,
+            }),
+          })
+
+          if (!response.ok) {
+            const errorText = await response.text()
+            throw new Error(
+              `WHEP 連線失敗 (${response.status})${errorText ? `：${errorText}` : ""}`,
+            )
+          }
+
+          const answerPayload = await response.json()
+          const answerSdp = answerPayload?.sdp
+          if (!answerSdp) {
+            throw new Error("go2rtc response missing SDP")
+          }
+
+          await pc.setRemoteDescription({ type: "answer", sdp: answerSdp })
+          setStatus(`已成功建立與 ${streamId} 的 WebRTC 連線`, "success")
+        } catch (error) {
+          console.error("WHEP 播放錯誤", error)
+          setStatus(error instanceof Error ? error.message : "播放失敗", "error")
+          stop()
+        }
+      }
+
+      function stop() {
         if (pc) {
-          try { pc.close(); } catch (_) { /* ignore */ }
+          pc.ontrack = null
+          pc.oniceconnectionstatechange = null
+          pc.getSenders().forEach((sender) => sender.track && sender.track.stop())
+          pc.getReceivers().forEach((receiver) => receiver.track && receiver.track.stop())
+          pc.close()
+          pc = null
         }
+        if (player.srcObject instanceof MediaStream) {
+          player.srcObject.getTracks().forEach((track) => track.stop())
+        }
+        player.srcObject = null
+        setStatus("已停止播放")
       }
-    }
 
-    reconnectBtn.addEventListener("click", () => {
-      connect().catch((err) => console.error("reconnect error", err));
-    });
+      startBtn.addEventListener("click", () => {
+        start()
+      })
 
-    connect().catch((err) => console.error("initial connect error", err));
-  </script>
-</body>
+      stopBtn.addEventListener("click", () => {
+        stop()
+      })
+
+      window.addEventListener("beforeunload", () => {
+        stop()
+      })
+    </script>
+  </body>
 </html>
