@@ -1,0 +1,22 @@
+# go2rtc configuration file
+# API server configuration
+api:
+  listen: ":1984"
+
+# RTSP server configuration
+rtsp:
+  listen: ":8554"
+  strict: "false"
+  publish:
+    - username: publisher
+      password: secret
+
+# When you publish to rtsp://publisher:secret@127.0.0.1:8554/cam1_raw,
+# go2rtc will automatically register it as 'cam1_raw'
+# No need to define it here - this prevents conflicts with dynamic registration
+
+# Stream definitions (optional - only needed for pulling from external sources)
+# streams:
+#   # Example for pulling from an external RTSP source
+#   external_camera:
+#     - rtsp://username:password@192.168.1.100:554/stream

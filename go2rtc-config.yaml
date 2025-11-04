@@ -21,10 +21,10 @@ webrtc:
 
 streams:
   cam1_raw:
-    - rtsp://localhost:8554/cam1_raw
-  "cam1_raw?rtsp_transport=tcp":
-    - rtsp://localhost:8554/cam1_raw
+    - rtsp://publisher:secret@127.0.0.1:8556/cam1_raw
+
   cam1_overlay:
-    - rtsp://localhost:8554/cam1_overlay
-  "cam1_overlay?rtsp_transport=tcp":
-    - rtsp://localhost:8554/cam1_overlay
+    - rtsp://localhost:8556/cam1_overlay
+  "123":
+    - "123"
+

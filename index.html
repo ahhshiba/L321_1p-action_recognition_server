@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <title>go2rtc Progressive MP4</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 32px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #0f172a;
+        color: #f8fafc;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.9rem;
+        text-align: center;
+      }
+      p {
+        margin: 0;
+        max-width: 680px;
+        text-align: center;
+        color: #cbd5f5;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+      }
+      .controls label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.9rem;
+      }
+      .controls input {
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(15, 23, 42, 0.6);
+        color: inherit;
+        min-width: 220px;
+      }
+      .player-card {
+        width: 100%;
+        max-width: 720px;
+        padding: 24px;
+        border-radius: 16px;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      video {
+        width: 100%;
+        max-height: 360px;
+        background: #020617;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        object-fit: contain;
+      }
+      .buttons {
+        display: flex;
+        gap: 12px;
+      }
+      button {
+        padding: 10px 18px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        background: #38bdf8;
+        color: #0f172a;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(56, 189, 248, 0.25);
+      }
+      button.secondary {
+        background: rgba(148, 163, 184, 0.25);
+        color: #e2e8f0;
+      }
+      .status {
+        font-size: 0.9rem;
+        min-height: 1.2em;
+        color: #bae6fd;
+      }
+      .status.error {
+        color: #fca5a5;
+      }
+      code {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.85rem;
+        background: rgba(148, 163, 184, 0.2);
+        padding: 2px 6px;
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>go2rtc Progressive MP4</h1>
+    <p>
+      透過 <code>/api/stream.mp4</code> 直接播放 go2rtc 串流；如需跨網域請確保 API 已透過 nginx 代理或允許 CORS。
+    </p>
+
+    <section class="controls">
+      <label>
+        go2rtc API
+        <input id="api-url" type="text" placeholder="http://localhost:8080" />
+      </label>
+      <label>
+        Stream / src
+        <input id="stream-id" type="text" value="cam1_overlay" placeholder="cam1_overlay" />
+      </label>
+    </section>
+
+    <section class="player-card">
+      <video id="mp4-player" controls playsinline></video>
+      <div class="buttons">
+        <button id="start-btn">開始播放</button>
+        <button id="stop-btn" class="secondary">停止</button>
+      </div>
+      <div id="status" class="status"></div>
+    </section>
+
+    <script>
+      const apiInput = document.getElementById("api-url")
+      const streamInput = document.getElementById("stream-id")
+      const player = document.getElementById("mp4-player")
+      const statusEl = document.getElementById("status")
+
+      if (!apiInput.value) {
+        try {
+          apiInput.value = window.location.origin
+        } catch (error) {
+          // ignore if inaccessible
+        }
+      }
+
+      function buildUrl() {
+        const base = (apiInput.value.trim() || window.location.origin).replace(/\/$/, "")
+        const streamId = streamInput.value.trim()
+        if (!streamId) throw new Error("請輸入 stream 名稱")
+        return `${base}/api/stream.mp4?src=${encodeURIComponent(streamId)}`
+      }
+
+      function start() {
+        try {
+          const url = buildUrl()
+          player.src = url
+          player.play().catch((err) => {
+            console.warn("autoplay blocked", err)
+            statusEl.textContent = "瀏覽器拒絕自動播放，請手動點擊播放鈕。"
+            statusEl.className = "status error"
+          })
+          statusEl.textContent = `來源：${url}`
+          statusEl.className = "status"
+        } catch (error) {
+          statusEl.textContent = error instanceof Error ? error.message : "載入失敗"
+          statusEl.className = "status error"
+        }
+      }
+
+      function stop() {
+        player.pause()
+        player.removeAttribute("src")
+        player.load()
+        statusEl.textContent = "已停止"
+        statusEl.className = "status"
+      }
+
+      document.getElementById("start-btn").addEventListener("click", start)
+      document.getElementById("stop-btn").addEventListener("click", stop)
+
+      window.addEventListener("beforeunload", () => {
+        stop()
+      })
+    </script>
+  </body>
+</html>

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import os
 import subprocess
 import signal
 import sys
@@ -16,18 +17,39 @@ def draw_overlay(frame: np.ndarray) -> np.ndarray:
                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,255,0), 2, cv2.LINE_AA)
     return frame
 
-def build_ffmpeg_proc(out_url: str, w: int, h: int, fps: int) -> subprocess.Popen:
+def build_ffmpeg_proc(out_url: str, w: int, h: int, fps: int, hwaccel: str, vaapi_device: str) -> subprocess.Popen:
     cmd = [
         "ffmpeg", "-re",
         "-f", "rawvideo", "-pix_fmt", "bgr24", "-s", f"{w}x{h}", "-r", str(fps), "-i", "-",
-        "-vaapi_device", "/dev/dri/renderD128",
-        "-vf", "format=nv12,hwupload",
-        "-c:v", "h264_vaapi",
+    ]
+
+    accel_mode = hwaccel
+    if hwaccel == "auto":
+        accel_mode = "vaapi" if os.path.exists(vaapi_device) else "none"
+
+    if accel_mode == "vaapi":
+        cmd += [
+            "-vaapi_device", vaapi_device,
+            "-vf", "format=nv12,hwupload",
+            "-c:v", "h264_vaapi",
+        ]
+    else:
+        cmd += [
+            "-vf", "format=yuv420p",
+            "-c:v", "libx264",
+            "-preset", "veryfast",
+            "-tune", "zerolatency",
+        ]
+
+    cmd += [
         "-b:v", "2500k", "-maxrate", "2500k", "-bufsize", "5000k",
         "-g", str(max(1, fps*2)), "-bf", "0",
         "-an", "-rtsp_transport", "tcp",
         "-f", "rtsp", out_url
     ]
+    print(f"[INFO] ffmpeg 使用 {accel_mode} 编碼 (hwaccel={hwaccel}).")
+    if accel_mode == "vaapi" and not os.path.exists(vaapi_device):
+        print(f"[WARN] 找不到 VAAPI device：{vaapi_device}，ffmpeg 可能會啟動失敗。")
     return subprocess.Popen(cmd, stdin=subprocess.PIPE)
 
 class GracefulKiller:
@@ -68,6 +90,20 @@ def main():
     ap.add_argument("--reconnect_sec", type=float, default=2.0)
     ap.add_argument("--tcp_pull", action="store_true", help="拉流也強制 TCP")
     ap.add_argument("--max_open_retries", type=int, default=10, help="開 RTSP 連續失敗次數上限")
+    default_hwaccel = os.getenv("ACTION_HWACCEL", "auto").lower()
+    if default_hwaccel not in {"auto", "vaapi", "none"}:
+        default_hwaccel = "auto"
+    ap.add_argument(
+        "--hwaccel",
+        choices=["auto", "vaapi", "none"],
+        default=default_hwaccel,
+        help="輸出串流編碼方式（auto→偵測 VAAPI 裝置，none→純軟體）。",
+    )
+    ap.add_argument(
+        "--vaapi_device",
+        default=os.getenv("VAAPI_DEVICE", "/dev/dri/renderD128"),
+        help="VAAPI 裝置路徑（僅在 hwaccel=vaapi 時使用）。",
+    )
     args = ap.parse_args()
 
     W, H, FPS = args.w, args.h, args.fps
@@ -90,7 +126,7 @@ def main():
         # 成功開啟後歸零
         open_fail_count = 0
 
-        ff = build_ffmpeg_proc(args.out_url, W, H, FPS)
+        ff = build_ffmpeg_proc(args.out_url, W, H, FPS, args.hwaccel, args.vaapi_device)
         if ff.stdin is None:
             print("[ERROR] 無法啟動 ffmpeg，重試中...")
             time.sleep(args.reconnect_sec)

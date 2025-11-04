@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # go2rtc service
+  go2rtc:
+    image: alexxit/go2rtc:latest
+    container_name: frigate-go2rtc
+    restart: unless-stopped
+    ports:
+      - "1984:1984"  # API and Web UI
+      - "8554:8554"  # RTSP
+    volumes:
+      - ./go2rtc.yaml:/config/go2rtc.yaml
+    networks:
+      - frigate-network
+
+  # Web interface service
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: frigate-web-interface
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GO2RTC_API_URL=http://go2rtc:1984
+      - NEXT_PUBLIC_GO2RTC_URL=http://localhost:1984
+    depends_on:
+      - go2rtc
+    networks:
+      - frigate-network
+
+networks:
+  frigate-network:
+    driver: bridge

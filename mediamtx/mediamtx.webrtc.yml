@@ -1,9 +1,0 @@
-rtsp: yes
-rtspAddress: :8554
-webrtc: yes
-webrtcAddress: :8889
-paths:
-  cam1_raw:
-    sourceOnDemand: no
-  cam1_overlay:
-    sourceOnDemand: no
