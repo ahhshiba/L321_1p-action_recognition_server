@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>go2rtc - WebRTC</title>
+    <style>
+        html, body {
+            min-height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background: #0f172a;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: #f8fafc;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+        }
+
+        .wrapper {
+            width: min(92vw, 960px);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        #controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: flex-end;
+            padding: 18px;
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+        }
+
+        #controls label {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.85rem;
+        }
+
+        #controls input {
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(15, 23, 42, 0.6);
+            color: #f8fafc;
+            min-width: 220px;
+        }
+
+        #controls .buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        #controls button {
+            padding: 9px 18px;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            background: #38bdf8;
+            color: #0f172a;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        #controls button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(56, 189, 248, 0.25);
+        }
+
+        #controls button.secondary {
+            background: rgba(148, 163, 184, 0.25);
+            color: #f8fafc;
+        }
+
+        .video-card {
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(15, 23, 42, 0.65);
+        }
+
+        video {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #020617;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            object-fit: contain;
+        }
+
+        #status {
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            font-size: 0.9rem;
+            min-height: 1.4em;
+        }
+
+        #status.error {
+            border-color: rgba(248, 113, 113, 0.6);
+            color: #fecaca;
+        }
+
+        #status.success {
+            border-color: rgba(134, 239, 172, 0.6);
+            color: #bbf7d0;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div id="controls">
+        <label>
+            Stream / src
+            <input id="stream-input" type="text" placeholder="cam1_overlay">
+        </label>
+        <label>
+            go2rtc API
+            <input id="api-input" type="text" placeholder="例如 http://localhost:8080">
+        </label>
+        <div class="buttons">
+            <button id="connect-btn">開始播放</button>
+            <button id="stop-btn" class="secondary">停止</button>
+        </div>
+    </div>
+    <div class="video-card">
+        <video id="video" autoplay playsinline muted controls></video>
+    </div>
+    <div id="status"></div>
+</div>
+<script>
+    (function () {
+        const videoEl = document.getElementById('video');
+        const statusEl = document.getElementById('status');
+        const params = new URLSearchParams(window.location.search);
+        const streamInput = document.getElementById('stream-input');
+        const apiInput = document.getElementById('api-input');
+        const connectBtn = document.getElementById('connect-btn');
+        const stopBtn = document.getElementById('stop-btn');
+
+        const streamParam =
+            params.get('src') ||
+            params.get('stream') ||
+            params.get('camera') ||
+            params.get('id') ||
+            '';
+
+        const defaultApi = (() => {
+            const apiParam = params.get('api');
+            return normalizeApi(apiParam);
+        })();
+
+        if (streamParam) {
+            streamInput.value = streamParam;
+        }
+        if (defaultApi) {
+            apiInput.value = defaultApi;
+        }
+
+        let pc;
+
+        function normalizeApi(raw) {
+            if (!raw || !raw.trim()) return window.location.origin;
+            try {
+                const url = new URL(raw, window.location.origin);
+                return url.origin + url.pathname.replace(/\/$/, '');
+            } catch (error) {
+                return raw.trim().replace(/\/$/, '');
+            }
+        }
+
+        function setStatus(message, type) {
+            statusEl.textContent = message;
+            statusEl.className = type ? type : '';
+        }
+
+        async function start(streamOverride) {
+            cleanup();
+
+            const streamId = (streamOverride ?? streamInput.value ?? '').trim();
+            if (!streamId) {
+                setStatus('請輸入 stream 名稱', 'error');
+                streamInput.focus();
+                return;
+            }
+            streamInput.value = streamId;
+
+            const userApiBase = normalizeApi(apiInput.value);
+            const originApiBase = normalizeApi(window.location.origin);
+            apiInput.value = userApiBase;
+
+            const candidateApis = Array.from(
+                new Set([originApiBase, userApiBase].filter(Boolean))
+            );
+
+            let lastFailure = null;
+
+            for (const apiBase of candidateApis) {
+                cleanup();
+                try {
+                    await negotiateWithApi(apiBase, streamId);
+                    apiInput.value = apiBase;
+                    return;
+                } catch (error) {
+                    console.error('go2rtc WebRTC error', error);
+                    lastFailure = {error, apiBase};
+                }
+            }
+
+            cleanup();
+            const failure = lastFailure ?? {error: new Error('啟動串流失敗。'), apiBase: userApiBase};
+            const message = failure.error instanceof Error ? failure.error.message : '啟動串流失敗。';
+            const corsHint =
+                failure.apiBase && failure.apiBase !== originApiBase
+                    ? `（跨網域請求可能被瀏覽器阻擋，建議改用 ${originApiBase} 或設定反向代理允許 CORS）`
+                    : '';
+            setStatus(`${message}${corsHint}`, 'error');
+        }
+
+        async function negotiateWithApi(apiBase, streamId) {
+            setStatus(`正在連線到 ${streamId}（${apiBase}）…`);
+
+            pc = new RTCPeerConnection({
+                iceServers: [{urls: 'stun:stun.l.google.com:19302'}],
+            });
+
+            const remoteStream = new MediaStream();
+            videoEl.srcObject = remoteStream;
+
+            pc.addTransceiver('video', {direction: 'recvonly'});
+            pc.addTransceiver('audio', {direction: 'recvonly'});
+
+            pc.ontrack = (event) => {
+                if (event.streams && event.streams[0]) {
+                    videoEl.srcObject = event.streams[0];
+                } else {
+                    remoteStream.addTrack(event.track);
+                }
+                videoEl.play().catch(() => {
+                    setStatus('串流已就緒，如自動播放被阻擋請手動點擊播放。', 'error');
+                });
+            };
+
+            pc.oniceconnectionstatechange = () => {
+                if (!pc) return;
+                if (pc.iceConnectionState === 'connected') {
+                    setStatus(`已連線：${streamId}`, 'success');
+                } else if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+                    setStatus('連線中斷，請重新開始。', 'error');
+                }
+            };
+
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            const response = await fetch(`${apiBase}/api/webrtc?src=${encodeURIComponent(streamId)}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    type: 'offer',
+                    sdp: offer.sdp,
+                }),
+            });
+
+            if (!response.ok) {
+                const message = await response.text();
+                throw new Error(message || `HTTP ${response.status}`);
+            }
+
+            const answer = await response.json();
+            if (!answer || !answer.sdp) {
+                throw new Error('go2rtc 回應缺少 SDP。');
+            }
+
+            await pc.setRemoteDescription({type: 'answer', sdp: answer.sdp});
+            setStatus('已完成協商，等待串流資料…');
+        }
+
+        function cleanup() {
+            if (pc) {
+                pc.oniceconnectionstatechange = null;
+                pc.ontrack = null;
+                pc.getSenders().forEach((sender) => sender.track && sender.track.stop());
+                pc.getReceivers().forEach((receiver) => receiver.track && receiver.track.stop());
+                pc.close();
+                pc = null;
+            }
+            if (videoEl.srcObject instanceof MediaStream) {
+                videoEl.srcObject.getTracks().forEach((track) => track.stop());
+            }
+            videoEl.srcObject = null;
+        }
+
+        function stop() {
+            const wasRunning = Boolean(pc);
+            cleanup();
+            setStatus(wasRunning ? '已停止播放' : '準備就緒');
+        }
+
+        window.addEventListener('beforeunload', cleanup);
+
+        connectBtn.addEventListener('click', () => start());
+        stopBtn.addEventListener('click', stop);
+        streamInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') start();
+        });
+        apiInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') start();
+        });
+
+        if (streamParam) {
+            start(streamParam);
+        } else {
+            setStatus('請輸入 stream 名稱後開始播放', '');
+        }
+    })();
+</script>
+</body>
+</html>
