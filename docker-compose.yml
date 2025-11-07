@@ -62,9 +62,9 @@ services:
 
   htmlv2:
     build:
-      context: ./html88_web
+      context: ./html5web
       dockerfile: Dockerfile
-    container_name: html88_web
+    container_name: html5_web
     restart: unless-stopped
     depends_on:
       - go2rtc
