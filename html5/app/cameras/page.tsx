@@ -7,19 +7,7 @@ import { TopBar } from "@/components/top-bar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import {
-  Video,
-  Settings,
-  Trash2,
-  RefreshCw,
-  AlertCircle,
-  ChevronUp,
-  Plus,
-  X,
-  Download,
-  Upload,
-  Activity,
-} from "lucide-react"
+import { Video, Settings, Trash2, RefreshCw, AlertCircle, ChevronUp, Plus, X, Activity, Circle } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -44,7 +32,10 @@ export default function CamerasPage() {
   const [expandedCamera, setExpandedCamera] = useState<string | null>(null)
   const [editingFence, setEditingFence] = useState<{ cameraId: string; fenceIndex: number } | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [videoConnected, setVideoConnected] = useState<Record<string, boolean>>({})
+  const [videoLoading, setVideoLoading] = useState<Record<string, boolean>>({})
+  const [videoError, setVideoError] = useState<Record<string, string | null>>({})
 
   const [draggingPoint, setDraggingPoint] = useState<number | null>(null)
   const [tempPoints, setTempPoints] = useState<{ x: number; y: number }[]>([])
@@ -85,48 +76,6 @@ export default function CamerasPage() {
         status: "error",
         message: error instanceof Error ? error.message : "Failed to check go2rtc health",
       })
-    }
-  }
-
-  const exportConfig = () => {
-    const configData = {
-      cameras,
-      exportedAt: new Date().toISOString(),
-    }
-    const blob = new Blob([JSON.stringify(configData, null, 2)], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `frigate-config-${new Date().toISOString().split("T")[0]}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  const importConfig = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string
-        const parsed = JSON.parse(content)
-        if (parsed.cameras && Array.isArray(parsed.cameras)) {
-          updateCameras(parsed.cameras)
-          console.log("[v0] Imported camera config from file")
-        } else {
-          alert("Invalid configuration file format")
-        }
-      } catch (error) {
-        console.error("[v0] Failed to import config:", error)
-        alert("Failed to import configuration file")
-      }
-    }
-    reader.readAsText(file)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
     }
   }
 
@@ -435,6 +384,77 @@ export default function CamerasPage() {
     setDraggingPoint(null)
   }, [editingFence, cameras])
 
+  useEffect(() => {
+    if (!expandedCamera || !videoRef.current) return
+
+    const camera = cameras.find((c) => c.id === expandedCamera)
+    if (!camera || !camera.enabled || !camera.streamUrl) return
+
+    const initProgressiveMP4 = () => {
+      try {
+        setVideoError({ ...videoError, [expandedCamera]: null })
+        setVideoLoading({ ...videoLoading, [expandedCamera]: true })
+
+        const go2rtcUrl = process.env.NEXT_PUBLIC_GO2RTC_URL || "http://localhost:1984"
+        const streamUrl = `${go2rtcUrl}/api/stream.mp4?src=${encodeURIComponent(camera.streamUrl)}`
+
+        console.log("[v0] Loading camera settings video stream:", streamUrl)
+
+        if (videoRef.current) {
+          videoRef.current.src = streamUrl
+
+          videoRef.current.onloadeddata = () => {
+            console.log("[v0] Camera settings video loaded")
+            setVideoConnected({ ...videoConnected, [expandedCamera]: true })
+            setVideoLoading({ ...videoLoading, [expandedCamera]: false })
+          }
+
+          videoRef.current.onerror = (e) => {
+            const isPreview = window.location.hostname.includes("vusercontent.net")
+            if (isPreview) {
+              console.log("[v0] Video unavailable in preview mode")
+              setVideoError({
+                ...videoError,
+                [expandedCamera]: "Preview mode: Video streams require local go2rtc server",
+              })
+            } else {
+              console.error("[v0] Video error:", e)
+              setVideoError({
+                ...videoError,
+                [expandedCamera]: "Failed to load video stream. Please check go2rtc server.",
+              })
+            }
+            setVideoConnected({ ...videoConnected, [expandedCamera]: false })
+            setVideoLoading({ ...videoLoading, [expandedCamera]: false })
+          }
+
+          videoRef.current.onplaying = () => {
+            console.log("[v0] Camera settings video playing")
+            setVideoConnected({ ...videoConnected, [expandedCamera]: true })
+            setVideoLoading({ ...videoLoading, [expandedCamera]: false })
+          }
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to connect to camera"
+        console.error("[v0] Video initialization error:", error)
+        setVideoError({ ...videoError, [expandedCamera]: errorMessage })
+        setVideoConnected({ ...videoConnected, [expandedCamera]: false })
+        setVideoLoading({ ...videoLoading, [expandedCamera]: false })
+      }
+    }
+
+    initProgressiveMP4()
+
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.src = ""
+        videoRef.current.onloadeddata = null
+        videoRef.current.onerror = null
+        videoRef.current.onplaying = null
+      }
+    }
+  }, [expandedCamera, cameras])
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
@@ -447,18 +467,9 @@ export default function CamerasPage() {
               <p className="text-sm text-muted-foreground">Manage and configure your cameras</p>
             </div>
             <div className="flex gap-2">
-              <input ref={fileInputRef} type="file" accept=".json" onChange={importConfig} className="hidden" />
               <Button variant="outline" onClick={checkGo2rtcHealth} disabled={healthStatus.status === "checking"}>
                 <Activity className="mr-2 h-4 w-4" />
                 {healthStatus.status === "checking" ? "Checking..." : "Check go2rtc"}
-              </Button>
-              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                <Upload className="mr-2 h-4 w-4" />
-                Import
-              </Button>
-              <Button variant="outline" onClick={exportConfig}>
-                <Download className="mr-2 h-4 w-4" />
-                Export
               </Button>
               <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
@@ -576,33 +587,13 @@ export default function CamerasPage() {
             {cameras.map((camera) => (
               <Card key={camera.id} className="p-6 bg-card border-border">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="h-32 w-48 bg-muted rounded-lg flex items-center justify-center">
-                      {camera.enabled ? (
-                        <img
-                          src={`/security-camera-view.png?height=128&width=192&query=security camera view ${camera.name}`}
-                          alt={camera.name}
-                          className="h-full w-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <AlertCircle className="h-8 w-8 text-muted-foreground" />
-                      )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-lg font-semibold text-foreground">{camera.name}</h3>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-semibold text-foreground">{camera.name}</h3>
-                        <Badge variant={camera.enabled ? "default" : "destructive"}>
-                          {camera.enabled ? "online" : "offline"}
-                        </Badge>
-                      </div>
-                      <div className="space-y-1 text-sm text-muted-foreground">
-                        <p>Location: {camera.location}</p>
-                        <p>Resolution: {camera.resolution}</p>
-                        <p>FPS: {camera.fps}</p>
-                        {camera.rtspUrl && <p>RTSP: {camera.rtspUrl}</p>}
-                        <p>WebRTC: {camera.streamUrl}</p>
-                        <p>Detecting: {camera.detectObjects.join(", ")}</p>
-                      </div>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      {camera.rtspUrl && <p>RTSP: {camera.rtspUrl}</p>}
+                      <p>Detecting: {camera.detectObjects.join(", ")}</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -631,17 +622,53 @@ export default function CamerasPage() {
 
                 {expandedCamera === camera.id && (
                   <div className="mt-6 pt-6 border-t border-border space-y-6">
-                    {/* Snapshot Preview */}
+                    {/* Live Stream */}
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-semibold text-foreground">Current Snapshot</h4>
+                        <h4 className="text-sm font-semibold text-foreground">Live Stream</h4>
+                        <div className="flex items-center gap-2">
+                          <Circle
+                            className={`h-2 w-2 ${
+                              videoError[camera.id]
+                                ? "fill-destructive text-destructive"
+                                : videoConnected[camera.id]
+                                  ? "fill-primary text-primary animate-pulse"
+                                  : "fill-muted-foreground text-muted-foreground opacity-50"
+                            }`}
+                          />
+                          <span className="text-xs text-muted-foreground">
+                            {videoError[camera.id] ? "ERROR" : videoConnected[camera.id] ? "LIVE" : "CONNECTING..."}
+                          </span>
+                        </div>
                       </div>
                       <div className="relative w-full max-w-2xl">
-                        <img
-                          src={`/security-camera-view.png?height=360&width=640&query=security camera snapshot ${camera.name}`}
-                          alt={`${camera.name} snapshot`}
-                          className="w-full rounded-lg border border-border"
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className="w-full rounded-lg border border-border bg-secondary"
                         />
+
+                        {videoError[camera.id] && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-secondary/95 rounded-lg">
+                            <AlertCircle className="h-8 w-8 text-destructive mb-2" />
+                            <p className="text-sm text-center text-foreground max-w-[400px] px-4">
+                              {videoError[camera.id]}
+                            </p>
+                            <p className="text-xs text-center text-muted-foreground mt-2">Stream: {camera.streamUrl}</p>
+                          </div>
+                        )}
+
+                        {videoLoading[camera.id] && !videoError[camera.id] && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-secondary/95 rounded-lg">
+                            <div className="flex flex-col items-center gap-2">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                              <p className="text-sm text-muted-foreground">Loading stream...</p>
+                            </div>
+                          </div>
+                        )}
+
                         {editingFence?.cameraId === camera.id && (
                           <canvas
                             ref={canvasRef}

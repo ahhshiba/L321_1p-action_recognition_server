@@ -2,8 +2,7 @@
 
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Circle, Maximize2, AlertCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Circle, AlertCircle } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import type { CameraConfig } from "@/config/cameras"
 
@@ -37,7 +36,6 @@ export function CameraFeed({ camera }: CameraFeedProps) {
         if (videoRef.current) {
           videoRef.current.src = streamUrl
 
-          // Handle video events
           videoRef.current.onloadeddata = () => {
             console.log("[v0] Video data loaded")
             setIsConnected(true)
@@ -45,8 +43,14 @@ export function CameraFeed({ camera }: CameraFeedProps) {
           }
 
           videoRef.current.onerror = (e) => {
-            console.error("[v0] Video error:", e)
-            setConnectionError("Failed to load video stream. Please check go2rtc server.")
+            const isPreview = window.location.hostname.includes("vusercontent.net")
+            if (isPreview) {
+              console.log("[v0] Video stream unavailable in preview mode (expected)")
+              setConnectionError("Preview mode: Video streams require local go2rtc server")
+            } else {
+              console.error("[v0] Video error:", e)
+              setConnectionError("Failed to load video stream. Please check go2rtc server.")
+            }
             setIsConnected(false)
             setIsLoading(false)
           }
@@ -105,22 +109,6 @@ export function CameraFeed({ camera }: CameraFeedProps) {
           </div>
         )}
 
-        {camera.detections && camera.detections > 0 && (
-          <div className="absolute top-2 right-2 z-20">
-            <Badge variant="destructive" className="bg-destructive/90">
-              {camera.detections} {camera.detections === 1 ? "Detection" : "Detections"}
-            </Badge>
-          </div>
-        )}
-
-        <Button
-          size="icon"
-          variant="ghost"
-          className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 hover:bg-background z-20"
-        >
-          <Maximize2 className="h-4 w-4" />
-        </Button>
-
         <div className="absolute bottom-2 left-2 flex items-center gap-2 z-20">
           <Circle
             className={`h-2 w-2 ${
@@ -154,16 +142,8 @@ export function CameraFeed({ camera }: CameraFeedProps) {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-semibold text-sm text-foreground">{camera.name}</h3>
-            <p className="text-xs text-muted-foreground">{camera.location}</p>
           </div>
-          <div className="flex flex-col items-end gap-1">
-            <Badge variant="outline" className="text-xs border-primary/20 text-primary">
-              {camera.enabled ? "Active" : "Disabled"}
-            </Badge>
-            <span className="text-xs text-muted-foreground">
-              {camera.resolution} @ {camera.fps}fps
-            </span>
-          </div>
+          <div className="flex flex-col items-end gap-1"></div>
         </div>
       </div>
     </Card>
