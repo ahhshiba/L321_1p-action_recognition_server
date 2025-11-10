@@ -1,0 +1,109 @@
+{
+  "webrtcServerUrl": "http://localhost:1984",
+  "availableDetectionObjects": [
+    "person",
+    "car",
+    "dog",
+    "cat",
+    "bicycle",
+    "motorcycle",
+    "bird",
+    "package",
+    "animal",
+    "truck",
+    "bus"
+  ],
+  "cameras": [
+    {
+      "id": "cam1_overlay",
+      "name": "cam1_overlay",
+      "streamUrl": "cam1_overlay",
+      "rtspUrl": "rtsp://localhost:8556/cam1_overlay",
+      "enabled": true,
+      "zones": [],
+      "location": "New Location",
+      "resolution": "1920x1080",
+      "fps": 30,
+      "detectObjects": [
+        "person"
+      ],
+      "recordingEnabled": true,
+      "snapshotsEnabled": true,
+      "motionDetection": true,
+      "minConfidence": 70,
+      "virtualFences": [
+        {
+          "name": "Zone 3",
+          "points": [
+            {
+              "x": 0.052083333333333336,
+              "y": 0.47509072913229955
+            },
+            {
+              "x": 0.4107142857142857,
+              "y": 0.395908940943583
+            },
+            {
+              "x": 0.5074404761904762,
+              "y": 0.836687561860772
+            },
+            {
+              "x": 0.10416666666666667,
+              "y": 0.8709996700758825
+            }
+          ],
+          "enabled": true,
+          "detectObjects": [
+            "person",
+            "package",
+            "car",
+            "animal"
+          ]
+        },
+        {
+          "name": "Zone 2",
+          "points": [
+            {
+              "x": 0.25,
+              "y": 0.25
+            },
+            {
+              "x": 0.75,
+              "y": 0.25
+            },
+            {
+              "x": 0.75,
+              "y": 0.75
+            },
+            {
+              "x": 0.25,
+              "y": 0.75
+            }
+          ],
+          "enabled": true,
+          "detectObjects": [
+            "person"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cam1_raw",
+      "name": "cam1_raw",
+      "streamUrl": "cam1_raw",
+      "rtspUrl": "rtsp://publisher:secret@127.0.0.1:8556/cam1_raw",
+      "enabled": true,
+      "zones": [],
+      "location": "New Location",
+      "resolution": "1920x1080",
+      "fps": 30,
+      "detectObjects": [
+        "person"
+      ],
+      "recordingEnabled": true,
+      "snapshotsEnabled": true,
+      "motionDetection": true,
+      "minConfidence": 70
+    }
+  ]
+}

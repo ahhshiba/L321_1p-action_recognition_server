@@ -41,26 +41,29 @@ export function useCameraConfig() {
   useEffect(() => {
     async function loadConfig() {
       try {
-        const { loadCameraConfig } = await import("@/app/actions/camera-config")
-        const result = await loadCameraConfig()
+        console.log("[v0] Attempting to load config from API (file system)")
+        const response = await fetch("/api/camera-config")
+        const result = await response.json()
 
-        if (result.success && result.cameras) {
-          console.log("[v0] Loaded cameras from JSON file")
-          setCameras(result.cameras)
-          if (result.availableDetectionObjects) {
-            setAvailableDetectionObjects(result.availableDetectionObjects)
-          }
-          if (result.webrtcServerUrl) {
-            setWebrtcServerUrl(result.webrtcServerUrl)
-          }
+        if (result.success) {
+          console.log("[v0] Successfully loaded config from cameras.json file")
+          setCameras(result.cameras || [])
+          setAvailableDetectionObjects(result.availableDetectionObjects || cameraConfig.availableDetectionObjects || [])
+          setWebrtcServerUrl(result.webrtcServerUrl || cameraConfig.webrtcServerUrl || "http://localhost:1984")
           setIsLoading(false)
           return
+        } else {
+          console.warn("[v0] API returned unsuccessful, error:", result.error)
         }
       } catch (error) {
-        console.log("[v0] Server Action not available, using localStorage", error)
+        console.warn("[v0] Failed to load from API:", error)
       }
 
-      // Fallback to localStorage
+      loadFromLocalStorage()
+    }
+
+    function loadFromLocalStorage() {
+      console.log("[v0] Loading from localStorage or defaults")
       try {
         const stored = localStorage.getItem(STORAGE_KEY)
         if (stored) {
@@ -90,7 +93,6 @@ export function useCameraConfig() {
 
           let serverUrl = parsed.webrtcServerUrl
           if (!serverUrl || serverUrl === "https://webrtc.example.com" || serverUrl === "http://127.0.0.1:8556") {
-            // Old placeholder or wrong port - use correct go2rtc API port
             serverUrl = cameraConfig.webrtcServerUrl || "http://localhost:1984"
             console.log("[v0] Migrating webrtcServerUrl to:", serverUrl)
             needsMigration = true
@@ -130,18 +132,34 @@ export function useCameraConfig() {
     setCameras(newCameras)
 
     try {
-      const { saveCameraConfig } = await import("@/app/actions/camera-config")
-      const result = await saveCameraConfig(newCameras)
+      console.log("[v0] Attempting to save config to cameras.json via API")
+      const response = await fetch("/api/camera-config", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ cameras: newCameras }),
+      })
+      const result = await response.json()
 
       if (result.success) {
-        console.log("[v0] Saved cameras to JSON file")
+        console.log("[v0] ✓ Successfully saved cameras to config/cameras.json file")
+        // Also save to localStorage as backup
+        const configData = {
+          cameras: newCameras,
+          availableDetectionObjects,
+          webrtcServerUrl,
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(configData))
+        console.log("[v0] ✓ Also saved backup to localStorage")
         return
+      } else {
+        console.error("[v0] ✗ Failed to save to file:", result.error)
       }
     } catch (error) {
-      console.log("[v0] Server Action not available, using localStorage", error)
+      console.error("[v0] ✗ API error when saving:", error)
     }
 
-    // Fallback to localStorage
     try {
       const configData = {
         cameras: newCameras,
@@ -149,7 +167,7 @@ export function useCameraConfig() {
         webrtcServerUrl,
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(configData))
-      console.log("[v0] Saved cameras to localStorage")
+      console.log("[v0] Saved cameras to localStorage as fallback")
     } catch (error) {
       console.error("[v0] Failed to save to localStorage:", error)
     }

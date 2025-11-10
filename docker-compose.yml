@@ -18,6 +18,13 @@ services:
 
   # 你的行為辨識前處理（疊字→回推 RTSP）
   action_recognition_server:
+    #user: "${HOST_UID}:${HOST_GID}"
+    environment:
+      CAMERAS_JSON: /app/share/cameras.json
+      EVENTS_JSON: /app/share/events.json
+      RECORDINGS_JSON: /app/share/recordings.json
+      EVENTS_DIR: /app/share/events
+      RECORDINGS_DIR: /app/share/recordings
     build:
       context: .
       dockerfile: app/Dockerfile
@@ -28,6 +35,8 @@ services:
       - go2rtc
     devices:
       - /dev/dri:/dev/dri      # Intel iGPU 給 VAAPI 用
+    volumes:
+      - ./share:/app/share:ro         # 只讀 cameras.json
     # 可選：保命線
     # deploy:
     #   resources:
@@ -61,18 +70,28 @@ services:
 
 
   htmlv2:
+    user: "${HOST_UID}:${HOST_GID}"
     build:
-      context: ./html5web
+      context: ./html13
       dockerfile: Dockerfile
-    container_name: html5_web
+    container_name: html13_web
     restart: unless-stopped
     depends_on:
       - go2rtc
     environment:
       GO2RTC_API_URL: http://go2rtc:1984
       NEXT_PUBLIC_GO2RTC_URL: http://localhost:1984
+      CAMERAS_JSON: /app/share/cameras.json
+      EVENTS_JSON: /app/share/events.json
+      RECORDINGS_JSON: /app/share/recordings.json
+      EVENTS_DIR: /app/share/events
+      RECORDINGS_DIR: /app/share/recordings
     ports:
       - "3000:3000"
+    volumes:
+      - ./share:/app/share:rw         # 可讀寫 cameras.json
+    
+
 
 
   # Frigate 建議吃 overlay 後的串流（避免雙重解碼）

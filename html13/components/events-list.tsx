@@ -49,7 +49,7 @@ export function EventsList() {
   useEffect(() => {
     async function loadEvents() {
       try {
-        const response = await fetch("/data/events.json")
+        const response = await fetch("/api/events")
         const data = await response.json()
         if (data.events) {
           setEvents(data.events.slice(0, 5))

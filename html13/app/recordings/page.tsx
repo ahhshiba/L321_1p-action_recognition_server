@@ -33,7 +33,7 @@ export default function RecordingsPage() {
 
   async function loadRecordings() {
     try {
-      const response = await fetch("/data/recordings.json")
+      const response = await fetch("/api/recordings")
       if (!response.ok) throw new Error("Failed to fetch recordings")
       const data = await response.json()
       setRecordings(data.recordings || [])
@@ -48,7 +48,14 @@ export default function RecordingsPage() {
   async function handleDeleteRecording(recordingId: string) {
     if (!confirm("Are you sure you want to delete this recording?")) return
 
-    setRecordings(recordings.filter((r) => r.id !== recordingId))
+    try {
+      const response = await fetch(`/api/recordings?id=${recordingId}`, { method: "DELETE" })
+      if (response.ok) {
+        setRecordings(recordings.filter((r) => r.id !== recordingId))
+      }
+    } catch (error) {
+      console.error("Failed to delete recording:", error)
+    }
   }
 
   function formatDate(dateStr: string) {

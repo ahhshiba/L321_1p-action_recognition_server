@@ -3,11 +3,12 @@
 import { promises as fs } from "fs"
 import path from "path"
 
-const RECORDINGS_FILE = path.join(process.cwd(), "public", "data", "recordings.json")
+const RECORDINGS_FILE = process.env.RECORDINGS_JSON || path.join(process.cwd(), "share", "recordings.json")
 
 export async function getRecordings() {
   try {
-    const fileContent = await fs.readFile(RECORDINGS_FILE, "utf-8")
+    const filePath = path.isAbsolute(RECORDINGS_FILE) ? RECORDINGS_FILE : path.join(process.cwd(), RECORDINGS_FILE)
+    const fileContent = await fs.readFile(filePath, "utf-8")
     const data = JSON.parse(fileContent)
     return { success: true, recordings: data.recordings }
   } catch (error) {
@@ -18,12 +19,13 @@ export async function getRecordings() {
 
 export async function deleteRecording(recordingId: string) {
   try {
-    const fileContent = await fs.readFile(RECORDINGS_FILE, "utf-8")
+    const filePath = path.isAbsolute(RECORDINGS_FILE) ? RECORDINGS_FILE : path.join(process.cwd(), RECORDINGS_FILE)
+    const fileContent = await fs.readFile(filePath, "utf-8")
     const data = JSON.parse(fileContent)
 
     data.recordings = data.recordings.filter((rec: { id: string }) => rec.id !== recordingId)
 
-    await fs.writeFile(RECORDINGS_FILE, JSON.stringify(data, null, 2), "utf-8")
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8")
     return { success: true }
   } catch (error) {
     console.error("Error deleting recording:", error)

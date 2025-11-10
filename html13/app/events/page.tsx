@@ -32,7 +32,7 @@ export default function EventsPage() {
 
   async function loadEvents() {
     try {
-      const response = await fetch("/data/events.json")
+      const response = await fetch("/api/events")
       if (!response.ok) throw new Error("Failed to fetch events")
       const data = await response.json()
       setEvents(data.events || [])
@@ -47,7 +47,14 @@ export default function EventsPage() {
   async function handleDeleteEvent(eventId: string) {
     if (!confirm("Are you sure you want to delete this event?")) return
 
-    setEvents(events.filter((e) => e.id !== eventId))
+    try {
+      const response = await fetch(`/api/events?id=${eventId}`, { method: "DELETE" })
+      if (response.ok) {
+        setEvents(events.filter((e) => e.id !== eventId))
+      }
+    } catch (error) {
+      console.error("Failed to delete event:", error)
+    }
   }
 
   function handleViewEvent(event: Event) {
