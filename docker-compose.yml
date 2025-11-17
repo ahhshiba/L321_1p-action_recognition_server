@@ -72,9 +72,9 @@ services:
   htmlv2:
     user: "${HOST_UID}:${HOST_GID}"
     build:
-      context: ./html13
+      context: ./html16
       dockerfile: Dockerfile
-    container_name: html13_web
+    container_name: html16_web
     restart: unless-stopped
     depends_on:
       - go2rtc
@@ -92,28 +92,3 @@ services:
       - ./share:/app/share:rw         # 可讀寫 cameras.json
     
 
-
-
-  # Frigate 建議吃 overlay 後的串流（避免雙重解碼）
-  #frigate:
-  #  container_name: frigate
-  #  privileged: true
-  #  restart: unless-stopped
-  #  shm_size: "1gb"
-  #  devices:
-  #    - /dev/video0:/dev/video0   # 若不需要 USB cam 可拿掉
-  #  depends_on:
-  #    - mediamtx
-  #    - mosquitto
-  #  ports:
-  #    - "5000:5000"          # Frigate Web UI
-  #    - "8554:8554"          # go2rtc RTSP
-  #   - "8555:8555/tcp"      # go2rtc WebRTC/LL-HLS
-  #    - "8555:8555/udp"
-  #  environment:
-  #    FRIGATE_RTSP_PASSWORD: ""
-  #  volumes:
-  #    - ./frigate/config:/config
-  #    - ./frigate/media:/media/frigate
-  #    - /etc/localtime:/etc/localtime:ro
-  #    - /dev/bus/usb:/dev/bus/usb  # 有 Coral 再保留

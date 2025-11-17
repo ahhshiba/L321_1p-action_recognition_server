@@ -121,7 +121,7 @@ export default function EventsPage() {
                 <Card key={event.id} className="overflow-hidden bg-card border-border">
                   <div className="aspect-video bg-muted relative">
                     <img
-                      src={event.thumbnail || "/placeholder.svg"}
+                      src={event.thumbnail ? `/api/events/media?file=${event.thumbnail}` : "/placeholder.svg"}
                       alt={`${event.type} detected`}
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -166,7 +166,9 @@ export default function EventsPage() {
             <div className="space-y-4">
               <div className="aspect-video bg-muted rounded-lg overflow-hidden">
                 <img
-                  src={selectedEvent.thumbnail || "/placeholder.svg"}
+                  src={
+                    selectedEvent.thumbnail ? `/api/events/media?file=${selectedEvent.thumbnail}` : "/placeholder.svg"
+                  }
                   alt={`${selectedEvent.type} detected`}
                   className="w-full h-full object-cover"
                   onError={(e) => {

@@ -112,7 +112,11 @@ export default function RecordingsPage() {
                     <div className="flex items-center gap-4">
                       <div className="h-20 w-32 bg-muted rounded-lg overflow-hidden relative">
                         <img
-                          src={recording.thumbnail || "/placeholder.svg"}
+                          src={
+                            recording.thumbnail
+                              ? `/api/recordings/media?file=${recording.thumbnail}`
+                              : "/placeholder.svg"
+                          }
                           alt={`${recording.cameraName} recording`}
                           className="w-full h-full object-cover"
                           onError={(event) => {
@@ -152,7 +156,7 @@ export default function RecordingsPage() {
                       <video
                         controls
                         className="w-full rounded-lg bg-black"
-                        src={recording.path}
+                        src={`/api/recordings/media?file=${recording.path}`}
                         onError={() => {
                           console.error("Video failed to load:", recording.path)
                         }}

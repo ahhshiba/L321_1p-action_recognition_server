@@ -1,24 +1,21 @@
 {
   "webrtcServerUrl": "http://localhost:1984",
   "availableDetectionObjects": [
-    "person",
-    "car",
-    "dog",
-    "cat",
-    "bicycle",
-    "motorcycle",
-    "bird",
-    "package",
-    "animal",
-    "truck",
-    "bus"
+    "walking",
+    "running",
+    "jumping",
+    "sitting_down",
+    "standing_up",
+    "bending",
+    "falling_down",
+    "picking_up_object"
   ],
   "cameras": [
     {
-      "id": "cam1_overlay",
-      "name": "cam1_overlay",
-      "streamUrl": "cam1_overlay",
-      "rtspUrl": "rtsp://localhost:8556/cam1_overlay",
+      "id": "cam1_raw",
+      "name": "cam1_raw",
+      "streamUrl": "cam1_raw",
+      "rtspUrl": "rtsp://publisher:secret@127.0.0.1:8556/cam1_raw",
       "enabled": true,
       "zones": [],
       "location": "New Location",
@@ -33,31 +30,30 @@
       "minConfidence": 70,
       "virtualFences": [
         {
-          "name": "Zone 3",
+          "name": "Zone 1",
           "points": [
             {
-              "x": 0.052083333333333336,
-              "y": 0.47509072913229955
+              "x": 0.10119047619047619,
+              "y": 0.13875123885034688
             },
             {
-              "x": 0.4107142857142857,
-              "y": 0.395908940943583
+              "x": 0.38244047619047616,
+              "y": 0.21010901883052527
             },
             {
-              "x": 0.5074404761904762,
-              "y": 0.836687561860772
+              "x": 0.75,
+              "y": 0.75
             },
             {
-              "x": 0.10416666666666667,
-              "y": 0.8709996700758825
+              "x": 0.041666666666666664,
+              "y": 0.8344895936570862
             }
           ],
           "enabled": true,
           "detectObjects": [
             "person",
-            "package",
-            "car",
-            "animal"
+            "walking",
+            "standing_up"
           ]
         },
         {
@@ -82,28 +78,11 @@
           ],
           "enabled": true,
           "detectObjects": [
-            "person"
+            "person",
+            "standing_up"
           ]
         }
       ]
-    },
-    {
-      "id": "cam1_raw",
-      "name": "cam1_raw",
-      "streamUrl": "cam1_raw",
-      "rtspUrl": "rtsp://publisher:secret@127.0.0.1:8556/cam1_raw",
-      "enabled": true,
-      "zones": [],
-      "location": "New Location",
-      "resolution": "1920x1080",
-      "fps": 30,
-      "detectObjects": [
-        "person"
-      ],
-      "recordingEnabled": true,
-      "snapshotsEnabled": true,
-      "motionDetection": true,
-      "minConfidence": 70
     }
   ]
 }

@@ -1,0 +1,30 @@
+{
+  "recordings": [
+    {
+      "id": "rec_001",
+      "cameraId": "cam1",
+      "cameraName": "Front Door",
+      "date": "2025-01-13",
+      "startTime": "08:00:00",
+      "endTime": "12:00:00",
+      "duration": "4h 0m",
+      "size": "2.4 GB",
+      "events": 12,
+      "path": "rec_001.mp4",
+      "thumbnail": "rec_001.jpg"
+    },
+    {
+      "id": "rec_002",
+      "cameraId": "cam2",
+      "cameraName": "Backyard",
+      "date": "2025-01-13",
+      "startTime": "08:00:00",
+      "endTime": "12:00:00",
+      "duration": "4h 0m",
+      "size": "2.1 GB",
+      "events": 8,
+      "path": "rec_002.mp4",
+      "thumbnail": "rec_002.jpg"
+    }
+  ]
+}

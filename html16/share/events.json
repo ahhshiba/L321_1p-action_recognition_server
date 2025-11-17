@@ -1,0 +1,34 @@
+{
+  "events": [
+    {
+      "id": "evt_001",
+      "cameraId": "cam1",
+      "cameraName": "Front Door",
+      "type": "person",
+      "timestamp": "2025-01-13T10:30:00Z",
+      "thumbnail": "evt_001.jpg",
+      "score": 0.95,
+      "zone": "entrance"
+    },
+    {
+      "id": "evt_002",
+      "cameraId": "cam2",
+      "cameraName": "Backyard",
+      "type": "car",
+      "timestamp": "2025-01-13T09:15:00Z",
+      "thumbnail": "evt_002.jpg",
+      "score": 0.88,
+      "zone": "driveway"
+    },
+    {
+      "id": "evt_003",
+      "cameraId": "cam3",
+      "cameraName": "Side Gate",
+      "type": "package",
+      "timestamp": "2025-01-13T08:45:00Z",
+      "thumbnail": "evt_003.jpg",
+      "score": 0.92,
+      "zone": "gate_area"
+    }
+  ]
+}

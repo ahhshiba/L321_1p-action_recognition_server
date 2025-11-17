@@ -1,3 +1,56 @@
 {
-  "recordings": []
+  "recordings": [
+    {
+      "id": "rec_001",
+      "cameraId": "cam1",
+      "cameraName": "Front Door",
+      "date": "2025-01-30",
+      "startTime": "00:00:00",
+      "endTime": "23:59:59",
+      "duration": "24h 0m",
+      "size": "4.2 GB",
+      "events": 12,
+      "path": "rec_001.mp4",
+      "thumbnail": "rec_001.jpg"
+    },
+    {
+      "id": "rec_002",
+      "cameraId": "cam2",
+      "cameraName": "Driveway",
+      "date": "2025-01-30",
+      "startTime": "00:00:00",
+      "endTime": "23:59:59",
+      "duration": "24h 0m",
+      "size": "3.8 GB",
+      "events": 8,
+      "path": "rec_002.mp4",
+      "thumbnail": "rec_002.jpg"
+    },
+    {
+      "id": "rec_003",
+      "cameraId": "cam3",
+      "cameraName": "Backyard",
+      "date": "2025-01-30",
+      "startTime": "00:00:00",
+      "endTime": "23:59:59",
+      "duration": "24h 0m",
+      "size": "4.5 GB",
+      "events": 15,
+      "path": "rec_003.mp4",
+      "thumbnail": "rec_003.jpg"
+    },
+    {
+      "id": "rec_004",
+      "cameraId": "cam4",
+      "cameraName": "Side Gate",
+      "date": "2025-01-30",
+      "startTime": "00:00:00",
+      "endTime": "23:59:59",
+      "duration": "24h 0m",
+      "size": "3.2 GB",
+      "events": 6,
+      "path": "rec_004.mp4",
+      "thumbnail": "rec_004.jpg"
+    }
+  ]
 }

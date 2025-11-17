@@ -13,7 +13,7 @@ import numpy as np
 def draw_overlay(frame: np.ndarray) -> np.ndarray:
     h, w = frame.shape[:2]
     cv2.rectangle(frame, (int(0.1*w), int(0.1*h)), (int(0.4*w), int(0.4*h)), (0, 255, 0), 2)
-    cv2.putText(frame, "Action: carry 0.91", (int(0.1*w), int(0.09*h)),
+    cv2.putText(frame, "Action: standing_up 0.91", (int(0.1*w), int(0.09*h)),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,255,0), 2, cv2.LINE_AA)
     return frame
 
