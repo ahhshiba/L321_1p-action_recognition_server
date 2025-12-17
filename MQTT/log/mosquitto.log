@@ -1,0 +1,67 @@
+1765866616: mosquitto version 2.0.22 starting
+1765866616: Config loaded from /mosquitto/config/mosquitto.conf.
+1765866616: Opening ipv4 listen socket on port 1883.
+1765866616: Opening ipv6 listen socket on port 1883.
+1765866616: mosquitto version 2.0.22 running
+1765866622: mosquitto version 2.0.22 terminating
+1765866622: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765866661: mosquitto version 2.0.22 starting
+1765866661: Config loaded from /mosquitto/config/mosquitto.conf.
+1765866661: Opening ipv4 listen socket on port 1883.
+1765866661: Opening ipv6 listen socket on port 1883.
+1765866661: mosquitto version 2.0.22 running
+1765866671: mosquitto version 2.0.22 terminating
+1765866671: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765872567: mosquitto version 2.0.22 starting
+1765872567: Config loaded from /mosquitto/config/mosquitto.conf.
+1765872567: Opening ipv4 listen socket on port 1883.
+1765872567: Opening ipv6 listen socket on port 1883.
+1765872567: mosquitto version 2.0.22 running
+1765872569: New connection from 172.18.0.5:50707 on port 1883.
+1765872569: New client connected from 172.18.0.5:50707 as yolov8_runner_YOLOv8_V1_cam1_raw (p2, c1, k60).
+1765872671: New connection from 172.18.0.1:58106 on port 1883.
+1765872671: New client connected from 172.18.0.1:58106 as auto-42D77854-445F-906C-7E3C-C656D0E0B0DA (p2, c1, k60).
+1765872693: Client auto-42D77854-445F-906C-7E3C-C656D0E0B0DA disconnected.
+1765872703: Client yolov8_runner_YOLOv8_V1_cam1_raw disconnected.
+1765872704: mosquitto version 2.0.22 terminating
+1765872704: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765882666: mosquitto version 2.0.22 starting
+1765882666: Config loaded from /mosquitto/config/mosquitto.conf.
+1765882666: Opening ipv4 listen socket on port 1883.
+1765882666: Opening ipv6 listen socket on port 1883.
+1765882666: mosquitto version 2.0.22 running
+1765882670: New connection from 172.18.0.9:35771 on port 1883.
+1765882670: New client connected from 172.18.0.9:35771 as yolov8_runner_YOLOv8_V1_cam1_raw (p2, c1, k60).
+1765883014: Client yolov8_runner_YOLOv8_V1_cam1_raw disconnected.
+1765883016: mosquitto version 2.0.22 terminating
+1765883016: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765883021: mosquitto version 2.0.22 starting
+1765883021: Config loaded from /mosquitto/config/mosquitto.conf.
+1765883021: Opening ipv4 listen socket on port 1883.
+1765883021: Opening ipv6 listen socket on port 1883.
+1765883021: mosquitto version 2.0.22 running
+1765883024: New connection from 172.18.0.9:36953 on port 1883.
+1765883024: New client connected from 172.18.0.9:36953 as yolov8_runner_YOLOv8_V1_cam1_raw (p2, c1, k60).
+1765883862: Client yolov8_runner_YOLOv8_V1_cam1_raw disconnected.
+1765883864: mosquitto version 2.0.22 terminating
+1765883864: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765954732: mosquitto version 2.0.22 starting
+1765954732: Config loaded from /mosquitto/config/mosquitto.conf.
+1765954732: Opening ipv4 listen socket on port 1883.
+1765954732: Opening ipv6 listen socket on port 1883.
+1765954732: mosquitto version 2.0.22 running
+1765954735: New connection from 172.18.0.6:50557 on port 1883.
+1765954735: New client connected from 172.18.0.6:50557 as yolov8_runner_YOLOv8_V1_cam1_raw (p2, c1, k60).
+1765955173: Client yolov8_runner_YOLOv8_V1_cam1_raw disconnected.
+1765955174: mosquitto version 2.0.22 terminating
+1765955174: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765959662: mosquitto version 2.0.22 starting
+1765959662: Config loaded from /mosquitto/config/mosquitto.conf.
+1765959662: Opening ipv4 listen socket on port 1883.
+1765959662: Opening ipv6 listen socket on port 1883.
+1765959662: mosquitto version 2.0.22 running
+1765959664: New connection from 172.18.0.9:46369 on port 1883.
+1765959664: New client connected from 172.18.0.9:46369 as yolov8_runner_YOLOv8_V1_cam1_raw (p2, c1, k60).
+1765960045: Client yolov8_runner_YOLOv8_V1_cam1_raw disconnected.
+1765960046: mosquitto version 2.0.22 terminating
+1765960046: Saving in-memory database to /mosquitto/data//mosquitto.db.

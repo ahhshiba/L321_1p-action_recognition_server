@@ -18,7 +18,6 @@ services:
 
   # 你的行為辨識前處理（疊字→回推 RTSP）
   action_recognition_server:
-    #user: "${HOST_UID}:${HOST_GID}"
     environment:
       CAMERAS_JSON: /app/share/cameras.json
       EVENTS_JSON: /app/share/events.json
@@ -37,12 +36,38 @@ services:
       - /dev/dri:/dev/dri      # Intel iGPU 給 VAAPI 用
     volumes:
       - ./share:/app/share:ro         # 只讀 cameras.json
-    # 可選：保命線
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: "2.0"
-    #       memory: 2g
+
+  model_launcher:
+    build:
+      context: .
+      dockerfile: models_classify/Dockerfile
+    container_name: model_launcher
+    restart: unless-stopped
+    env_file: app/.env
+    environment:
+      CAMERAS_JSON: /app/share/cameras.json
+      MODELS_JSON: /app/share/models.json
+      STREAM_HOST_INTERNAL: go2rtc
+      STREAM_PORT_INTERNAL: "8554"
+
+      #  給 launcher.py 傳給 yolov8_inference.py 用的 MQTT 設定
+      MQTT_HOST: mqtt          # 就是下面那個 mqtt service 的名稱
+      MQTT_PORT: "1883"
+      # MQTT_TOPIC 不填的話，runner 會用預設：vision/<cameraId>/detections
+      # MQTT_TOPIC: "vision/global/detections"
+      # 若未來要開帳密再打開這兩行
+      # MQTT_USERNAME: youruser
+      # MQTT_PASSWORD: yourpass
+      # MQTT_QOS: "0"
+    depends_on:
+      - go2rtc
+      - mqtt
+    volumes:
+      - ./share:/app/share:ro
+      - ./models_classify/models:/models:ro
+      - ./models_classify/class:/class:ro
+
+
   go2rtc:
     image: alexxit/go2rtc:latest
     container_name: go2rtc
@@ -56,17 +81,17 @@ services:
       - "8554:8554"      # go2rtc RTSP
     volumes:
       - ./go2rtc/go2rtc-config.yaml:/config/go2rtc.yaml  # 你自己準備的設定檔
-  web:
-    image: nginx:1.25-alpine
-    container_name: html_test_web
-    restart: unless-stopped
-    depends_on:
-      - go2rtc
-    ports:
-      - "8080:80"
-    volumes:
-      - ./html_test/index.html:/usr/share/nginx/html/index.html:ro
-      - ./html_test/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  #web:
+  #  image: nginx:1.25-alpine
+  #  container_name: html_test_web
+  #  restart: unless-stopped
+  #  depends_on:
+  #    - go2rtc
+  #  ports:
+  #    - "8080:80"
+  #  volumes:
+  #    - ./html_test/index.html:/usr/share/nginx/html/index.html:ro
+  #    - ./html_test/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
 
   htmlv2:
@@ -90,5 +115,46 @@ services:
       - "3000:3000"
     volumes:
       - ./share:/app/share:rw         # 可讀寫 cameras.json
-    
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: mqtt
+    restart: unless-stopped
+    ports:
+      - "1883:1883"              # 給 host / 外部測試用
+    volumes:
+      - ./MQTT/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./MQTT/data:/mosquitto/data
+      - ./MQTT/log:/mosquitto/log
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vision
+      POSTGRES_USER: vision_user
+      POSTGRES_PASSWORD: vision_pass
+      TZ: Asia/Taipei
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: pgadmin
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin_pass
+      TZ: Asia/Taipei
+    ports:
+      - "5050:80"
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin
+
 

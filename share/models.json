@@ -1,0 +1,32 @@
+{
+  "models": [
+    {
+        "type": "yolov8",
+        "name": "YOLOv8_V1",
+        "runner": "/runner/yolov8_inference.py",
+        "weights": "/models/yolov8_coco.pt",
+        "class_file": "/class/yolov8_coco.txt",
+        "inputSize": [640, 640],
+        "classes": [
+            { "id": 0, "name": "person" }
+        ],
+        "defaultConfidence": 0.5,
+        "nmsThreshold": 0.45,
+        "device": ""
+    },
+    {
+        "type": "yolov7",
+        "name": "YOLOv7 coco",
+        "runner": "/runner/yolov7_inference.py",
+        "weights": "/models/yolov7_coco.pt",
+        "class_file": "/class/yolov7_coco.txt",
+        "inputSize": [640, 640],
+        "classes": [
+            { "id": 0, "name": "person" }
+        ],
+        "defaultConfidence": 0.5,
+        "nmsThreshold": 0.45,
+        "device": "cuda:0"
+    }
+  ]
+}

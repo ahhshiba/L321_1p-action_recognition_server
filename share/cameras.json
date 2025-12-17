@@ -12,10 +12,10 @@
   ],
   "cameras": [
     {
-      "id": "cam1_raw",
-      "name": "cam1_raw",
-      "streamUrl": "cam1_raw",
-      "rtspUrl": "rtsp://publisher:secret@127.0.0.1:8556/cam1_raw",
+      "id": "cam1overlay",
+      "name": "cam1overlay",
+      "streamUrl": "cam1overlay",
+      "rtspUrl": "rtsp://127.0.0.1:8556/cam1overlay",
       "enabled": true,
       "zones": [],
       "location": "New Location",
@@ -33,33 +33,6 @@
           "name": "Zone 1",
           "points": [
             {
-              "x": 0.10119047619047619,
-              "y": 0.13875123885034688
-            },
-            {
-              "x": 0.38244047619047616,
-              "y": 0.21010901883052527
-            },
-            {
-              "x": 0.75,
-              "y": 0.75
-            },
-            {
-              "x": 0.041666666666666664,
-              "y": 0.8344895936570862
-            }
-          ],
-          "enabled": true,
-          "detectObjects": [
-            "person",
-            "walking",
-            "standing_up"
-          ]
-        },
-        {
-          "name": "Zone 2",
-          "points": [
-            {
               "x": 0.25,
               "y": 0.25
             },
@@ -79,10 +52,29 @@
           "enabled": true,
           "detectObjects": [
             "person",
-            "standing_up"
+            "walking"
           ]
         }
       ]
+    },
+    {
+      "id": "cam1_raw",
+      "name": "cam1_raw",
+      "streamUrl": "cam1_raw",
+      "modelId": "YOLOv8_V1",
+      "rtspUrl": "rtsp://publisher:secret@127.0.0.1:8556/cam1_raw",
+      "enabled": true,
+      "zones": [],
+      "location": "New Location",
+      "resolution": "1920x1080",
+      "fps": 30,
+      "detectObjects": [
+        "person"
+      ],
+      "recordingEnabled": true,
+      "snapshotsEnabled": true,
+      "motionDetection": true,
+      "minConfidence": 70
     }
   ]
 }
