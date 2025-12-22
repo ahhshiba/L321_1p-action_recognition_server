@@ -309,6 +309,14 @@ class FenceService:
         if not self.db_pool:
             return
         event_id = f"evt_{uuid.uuid4().hex[:12]}"
+        event_payload = {
+            "id": event_id,
+            "camera_id": camera_id,
+            "class_name": class_name,
+            "ts": self._format_timestamp(timestamp),
+            "thumbnail": None,
+            "score": score,
+        }
         try:
             with self.db_pool.connection() as conn:
                 with conn.cursor() as cur:
@@ -320,8 +328,23 @@ class FenceService:
                         """,
                         (event_id, camera_id, class_name, timestamp, None, score),
                     )
+            self._publish_event(camera_id, event_payload)
         except Exception as exc:
             logging.error("Failed to insert event into Postgres: %s", exc)
+
+    @staticmethod
+    def _format_timestamp(value: datetime) -> str:
+        ts = value.astimezone(timezone.utc).isoformat(timespec="milliseconds")
+        return ts.replace("+00:00", "Z")
+
+    def _publish_event(self, camera_id: str, payload: dict):
+        if not self.mqtt_client:
+            return
+        topic = f"vision/{camera_id}/events"
+        try:
+            self.mqtt_client.publish(topic, json.dumps(payload), qos=self.mqtt_qos, retain=False)
+        except Exception as exc:
+            logging.error("Failed to publish fence event to MQTT: %s", exc)
 
     def load_camera_config(self) -> Dict[str, CameraFenceConfig]:
         try:
