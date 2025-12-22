@@ -65,3 +65,91 @@
 1765960045: Client yolov8_runner_YOLOv8_V1_cam1_raw disconnected.
 1765960046: mosquitto version 2.0.22 terminating
 1765960046: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1766057044: mosquitto version 2.0.22 starting
+1766057044: Config loaded from /mosquitto/config/mosquitto.conf.
+1766057044: Opening ipv4 listen socket on port 1883.
+1766057044: Opening ipv6 listen socket on port 1883.
+1766057044: mosquitto version 2.0.22 running
+1766057046: New connection from 172.18.0.6:60747 on port 1883.
+1766057046: New client connected from 172.18.0.6:60747 as yolov8_runner_YOLOv8_V1_cam1_raw (p2, c1, k60).
+1766057216: New connection from 172.18.0.1:55870 on port 1883.
+1766057216: New client connected from 172.18.0.1:55870 as auto-364B657D-4F3E-6BB0-6215-CE6DD52999FA (p2, c1, k60).
+1766057219: Client auto-364B657D-4F3E-6BB0-6215-CE6DD52999FA disconnected.
+1766057244: Client yolov8_runner_YOLOv8_V1_cam1_raw disconnected.
+1766057246: mosquitto version 2.0.22 terminating
+1766057246: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1766058054: mosquitto version 2.0.22 starting
+1766058054: Config loaded from /mosquitto/config/mosquitto.conf.
+1766058054: Opening ipv4 listen socket on port 1883.
+1766058054: Opening ipv6 listen socket on port 1883.
+1766058054: mosquitto version 2.0.22 running
+1766058091: New connection from 172.18.0.4:46131 on port 1883.
+1766058091: New client connected from 172.18.0.4:46131 as fence_service (p2, c1, k60).
+1766058121: Client fence_service disconnected.
+1766058132: New connection from 172.18.0.4:60827 on port 1883.
+1766058132: New client connected from 172.18.0.4:60827 as fence_service (p2, c1, k60).
+1766058134: New connection from 172.18.0.9:39971 on port 1883.
+1766058134: New client connected from 172.18.0.9:39971 as yolov8_runner_YOLOv8_V1_cam1_raw (p2, c1, k60).
+1766058282: Client fence_service disconnected.
+1766058283: Client yolov8_runner_YOLOv8_V1_cam1_raw disconnected.
+1766058284: mosquitto version 2.0.22 terminating
+1766058284: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1766058347: mosquitto version 2.0.22 starting
+1766058347: Config loaded from /mosquitto/config/mosquitto.conf.
+1766058347: Opening ipv4 listen socket on port 1883.
+1766058347: Opening ipv6 listen socket on port 1883.
+1766058347: mosquitto version 2.0.22 running
+1766058347: New connection from 172.18.0.4:40917 on port 1883.
+1766058347: New client connected from 172.18.0.4:40917 as fence_service (p2, c1, k60).
+1766058360: Client fence_service disconnected.
+1766058366: New connection from 172.18.0.6:42435 on port 1883.
+1766058366: New client connected from 172.18.0.6:42435 as fence_service (p2, c1, k60).
+1766058367: New connection from 172.18.0.9:57987 on port 1883.
+1766058367: New client connected from 172.18.0.9:57987 as yolov8_runner_YOLOv8_V1_cam1_raw (p2, c1, k60).
+1766058733: New connection from 172.18.0.1:39048 on port 1883.
+1766058733: New client connected from 172.18.0.1:39048 as auto-CFB5279F-D023-5385-41A4-F3D2B347852D (p2, c1, k60).
+1766058749: Client auto-CFB5279F-D023-5385-41A4-F3D2B347852D disconnected.
+1766058926: New connection from 172.18.0.1:50146 on port 1883.
+1766058926: New client connected from 172.18.0.1:50146 as auto-D5BC7A79-1E5E-ABD0-BBBB-7AB572D0A1F4 (p2, c1, k60).
+1766058931: Client auto-D5BC7A79-1E5E-ABD0-BBBB-7AB572D0A1F4 disconnected.
+1766059259: Client fence_service disconnected.
+1766059259: New connection from 172.18.0.6:48687 on port 1883.
+1766059259: New client connected from 172.18.0.6:48687 as fence_service (p2, c1, k60).
+1766059305: New connection from 172.18.0.1:60344 on port 1883.
+1766059305: New client connected from 172.18.0.1:60344 as auto-35450ED1-BDB1-1370-4513-0CA7AAD2C66A (p2, c1, k60).
+1766059311: Client auto-35450ED1-BDB1-1370-4513-0CA7AAD2C66A disconnected.
+1766059445: Client fence_service disconnected.
+1766059449: New connection from 172.18.0.6:39167 on port 1883.
+1766059449: New client connected from 172.18.0.6:39167 as fence_service (p2, c1, k60).
+1766059460: New connection from 172.18.0.1:42336 on port 1883.
+1766059460: New client connected from 172.18.0.1:42336 as auto-2E121F54-F1EB-4157-96BD-4927CEC9293E (p2, c1, k60).
+1766059462: Client auto-2E121F54-F1EB-4157-96BD-4927CEC9293E disconnected.
+1766059800: Client fence_service disconnected.
+1766059801: Client yolov8_runner_YOLOv8_V1_cam1_raw disconnected.
+1766059802: mosquitto version 2.0.22 terminating
+1766059802: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1766059834: mosquitto version 2.0.22 starting
+1766059834: Config loaded from /mosquitto/config/mosquitto.conf.
+1766059834: Opening ipv4 listen socket on port 1883.
+1766059834: Opening ipv6 listen socket on port 1883.
+1766059834: mosquitto version 2.0.22 running
+1766059835: New connection from 172.18.0.4:58687 on port 1883.
+1766059835: New client connected from 172.18.0.4:58687 as yolov8_runner_YOLOv8_V1_cam1_raw (p2, c1, k60).
+1766059836: Client yolov8_runner_YOLOv8_V1_cam1_raw disconnected.
+1766059839: New connection from 172.18.0.4:51025 on port 1883.
+1766059839: New client connected from 172.18.0.4:51025 as yolov8_runner_YOLOv8_V1_cam1_raw (p2, c1, k60).
+1766059840: Client yolov8_runner_YOLOv8_V1_cam1_raw disconnected.
+1766059847: New connection from 172.18.0.10:46201 on port 1883.
+1766059847: New client connected from 172.18.0.10:46201 as fence_service (p2, c1, k60).
+1766059848: New connection from 172.18.0.8:37645 on port 1883.
+1766059848: New client connected from 172.18.0.8:37645 as yolov8_runner_YOLOv8_V1_cam1_raw (p2, c1, k60).
+1766059858: New connection from 172.18.0.1:46474 on port 1883.
+1766059858: New client connected from 172.18.0.1:46474 as auto-492AC15D-6177-0D58-F3B5-F44A6BB060F6 (p2, c1, k60).
+1766059861: Client auto-492AC15D-6177-0D58-F3B5-F44A6BB060F6 disconnected.
+1766060083: Client fence_service disconnected.
+1766060084: New connection from 172.18.0.10:57131 on port 1883.
+1766060084: New client connected from 172.18.0.10:57131 as fence_service (p2, c1, k60).
+1766060109: Client fence_service disconnected.
+1766060110: Client yolov8_runner_YOLOv8_V1_cam1_raw disconnected.
+1766060111: mosquitto version 2.0.22 terminating
+1766060111: Saving in-memory database to /mosquitto/data//mosquitto.db.

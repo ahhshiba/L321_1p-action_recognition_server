@@ -67,6 +67,29 @@ services:
       - ./models_classify/models:/models:ro
       - ./models_classify/class:/class:ro
 
+  fence:
+    build:
+      context: .
+      dockerfile: fence/Dockerfile
+    container_name: fence
+    restart: unless-stopped
+    depends_on:
+      - mqtt
+      - postgres
+    environment:
+      CAMERAS_JSON: /app/share/cameras.json
+      MQTT_HOST: mqtt
+      MQTT_PORT: "1883"
+      MQTT_TOPIC: vision/+/detections
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: vision
+      DATABASE_USER: vision_user
+      DATABASE_PASSWORD: vision_pass
+      FENCE_COOLDOWN_SEC: "30"
+    volumes:
+      - ./share:/app/share:ro
+
 
   go2rtc:
     image: alexxit/go2rtc:latest
@@ -156,5 +179,3 @@ services:
       - "5050:80"
     volumes:
       - ./pgadmin:/var/lib/pgadmin
-
-

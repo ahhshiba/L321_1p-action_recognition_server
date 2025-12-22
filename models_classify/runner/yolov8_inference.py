@@ -205,6 +205,8 @@ def publish_detections_mqtt(
     detections: List[Tuple[int, float, Tuple[int, int, int, int]]],
     class_map: Dict[int, str],
     yolo_names: Dict[int, str],
+    frame_width: int,
+    frame_height: int,
 ):
     """
     把這一張 frame 的偵測結果丟到 MQTT。
@@ -221,7 +223,7 @@ def publish_detections_mqtt(
           "class_id": 0,
           "class_name": "person",
           "score": 0.94,
-          "bbox": [x1, y1, x2, y2]
+          "bbox": [x1_norm, y1_norm, x2_norm, y2_norm]
         },
         ...
       ]
@@ -233,6 +235,12 @@ def publish_detections_mqtt(
         # 若你也想送「空偵測」，這行拿掉即可
         return
 
+    def _normalize_coord(value: int, max_value: int) -> float:
+        """Clamp normalized coords to [0, 1] for MQTT payload."""
+        if max_value <= 0:
+            return 0.0
+        return max(0.0, min(1.0, value / float(max_value)))
+
     det_list = []
     for cls_id, conf, (x1, y1, x2, y2) in detections:
         label = get_class_name(class_map, yolo_names, cls_id)
@@ -241,7 +249,12 @@ def publish_detections_mqtt(
                 "class_id": cls_id,
                 "class_name": label,
                 "score": conf,
-                "bbox": [x1, y1, x2, y2],
+                "bbox": [
+                    _normalize_coord(x1, frame_width),
+                    _normalize_coord(y1, frame_height),
+                    _normalize_coord(x2, frame_width),
+                    _normalize_coord(y2, frame_height),
+                ],
             }
         )
 
@@ -372,6 +385,8 @@ def run_stream(
             detections,
             class_map,
             yolo_names,
+            in_w,
+            in_h,
         )
 
         # 推到 RTSP (ffmpeg)

@@ -1,7 +1,7 @@
 {
   "webrtcServerUrl": "http://localhost:1984",
   "availableDetectionObjects": [
-    "walking",
+    "book",
     "running",
     "jumping",
     "sitting_down",
@@ -33,26 +33,27 @@
           "name": "Zone 1",
           "points": [
             {
-              "x": 0.25,
-              "y": 0.25
+              "x": 0.8184523809523809,
+              "y": 0.21407333994053518
             },
             {
-              "x": 0.75,
-              "y": 0.25
+              "x": 0.9985119047619048,
+              "y": 0.1962338949454906
             },
             {
-              "x": 0.75,
-              "y": 0.75
+              "x": 0.9955357142857143,
+              "y": 0.7036669970267592
             },
             {
-              "x": 0.25,
-              "y": 0.75
+              "x": 0.8392857142857143,
+              "y": 0.7452923686818632
             }
           ],
           "enabled": true,
           "detectObjects": [
             "person",
-            "walking"
+            "walking",
+            "book"
           ]
         }
       ]
@@ -74,7 +75,35 @@
       "recordingEnabled": true,
       "snapshotsEnabled": true,
       "motionDetection": true,
-      "minConfidence": 70
+      "minConfidence": 70,
+      "virtualFences": [
+        {
+          "name": "Zone 1",
+          "points": [
+            {
+              "x": 0.8229166666666666,
+              "y": 0.20218037661050545
+            },
+            {
+              "x": 0.9985119047619048,
+              "y": 0.1466798810703667
+            },
+            {
+              "x": 0.9985119047619048,
+              "y": 0.6838453914767096
+            },
+            {
+              "x": 0.8348214285714286,
+              "y": 0.6719524281466799
+            }
+          ],
+          "enabled": true,
+          "detectObjects": [
+            "person",
+            "book"
+          ]
+        }
+      ]
     }
   ]
 }
