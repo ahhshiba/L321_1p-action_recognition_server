@@ -128,12 +128,15 @@ class FenceService:
         self.db_password = os.environ.get("DATABASE_PASSWORD", "vision_pass")
 
         self.cooldown_seconds = float(os.environ.get("FENCE_COOLDOWN_SEC", "30"))
+        self.leave_seconds = float(os.environ.get("FENCE_LEAVE_SEC", "5"))
         self.position_digits = max(0, int(os.environ.get("FENCE_POSITION_DIGITS", "2")))
         self.stop_event = Event()
         self.camera_map: Dict[str, CameraFenceConfig] = {}
         self.mqtt_client: Optional[mqtt.Client] = None
         self.db_pool: Optional[ConnectionPool] = None
-        self.last_trigger: Dict[Tuple[str, str, str, float, float], float] = {}
+        self.last_trigger: Dict[Tuple[str, str, str], float] = {}
+        self.last_seen: Dict[Tuple[str, str, str], float] = {}
+        self.active_fences: Dict[Tuple[str, str, str], bool] = {}
 
     def start(self):
         self.camera_map = self.load_camera_config()
@@ -227,11 +230,13 @@ class FenceService:
         if not camera_cfg or not camera_cfg.fences:
             return
 
+        now = time.time()
+        self._rearm_inactive(now)
+        timestamp = parse_timestamp(payload.get("timestamp"))
         detections = payload.get("detections") or []
         if not detections:
             return
 
-        timestamp = parse_timestamp(payload.get("timestamp"))
         for detection in detections:
             self._handle_detection(camera_cfg, detection, timestamp)
 
@@ -270,13 +275,8 @@ class FenceService:
                 continue
             if not point_in_polygon(center_x, center_y, fence.points):
                 continue
-            if not self._should_emit_event(
-                camera_cfg.camera_id,
-                fence.name,
-                normalized_class,
-                center_x,
-                center_y,
-            ):
+            self._update_last_seen(camera_cfg.camera_id, fence.name, normalized_class)
+            if not self._should_emit_event(camera_cfg.camera_id, fence.name, normalized_class):
                 continue
             self._store_event(camera_cfg.camera_id, class_name, score, timestamp)
             logging.info(
@@ -292,18 +292,34 @@ class FenceService:
         camera_id: str,
         fence_name: str,
         class_name: str,
-        center_x: float,
-        center_y: float,
     ) -> bool:
-        quant_x = round(center_x, self.position_digits) if self.position_digits >= 0 else center_x
-        quant_y = round(center_y, self.position_digits) if self.position_digits >= 0 else center_y
-        key = (camera_id, fence_name, class_name, quant_x, quant_y)
+        active_key = (camera_id, fence_name, class_name)
+        if self.active_fences.get(active_key):
+            return False
+        key = active_key
         now = time.time()
         last = self.last_trigger.get(key)
         if last and now - last < self.cooldown_seconds:
             return False
         self.last_trigger[key] = now
+        self.active_fences[active_key] = True
         return True
+
+    def _update_last_seen(self, camera_id: str, fence_name: str, class_name: str) -> None:
+        key = (camera_id, fence_name, class_name)
+        now = time.time()
+        self.last_seen[key] = now
+
+    def _rearm_inactive(self, now: float) -> None:
+        if self.leave_seconds <= 0:
+            return
+        expired: List[Tuple[str, str, str]] = []
+        for key, last in self.last_seen.items():
+            if now - last > self.leave_seconds:
+                expired.append(key)
+        for key in expired:
+            self.last_seen.pop(key, None)
+            self.active_fences.pop(key, None)
 
     def _store_event(self, camera_id: str, class_name: str, score: Optional[float], timestamp: datetime):
         if not self.db_pool:

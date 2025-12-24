@@ -86,9 +86,48 @@ services:
       DATABASE_NAME: vision
       DATABASE_USER: vision_user
       DATABASE_PASSWORD: vision_pass
-      FENCE_COOLDOWN_SEC: "30"
+      FENCE_COOLDOWN_SEC: "0"
+      FENCE_LEAVE_SEC: "5"
     volumes:
       - ./share:/app/share:ro
+
+  record:
+    build:
+      context: .
+      dockerfile: record/Dockerfile
+    container_name: record
+    restart: unless-stopped
+    depends_on:
+      - go2rtc
+      - mqtt
+      - postgres
+    environment:
+      CAMERAS_JSON: /app/share/cameras.json
+      EVENTS_DIR: /app/share/events
+      RECORDINGS_DIR: /app/share/recordings
+      MQTT_HOST: mqtt
+      MQTT_PORT: "1883"
+      MQTT_TOPIC: vision/+/events
+      STREAM_HOST_INTERNAL: go2rtc
+      STREAM_PORT_INTERNAL: "8554"
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: vision
+      DATABASE_USER: vision_user
+      DATABASE_PASSWORD: vision_pass
+      SEGMENT_SECONDS: "300"
+      EVENT_PRE_SECONDS: "10"
+      EVENT_POST_SECONDS: "10"
+      EVENT_BUFFER_ENABLED: "1"
+      EVENT_BUFFER_DIR: /app/share/recordings_buffer
+      EVENT_BUFFER_SEGMENT_SECONDS: "1"
+      EVENT_BUFFER_SECONDS: "10"
+      EVENT_BUFFER_REENCODE: "1"
+      EVENT_BUFFER_GOP: "10"
+      TZ: UTC
+    volumes:
+      - ./share:/app/share:rw
+      - ./share/recordings_buffer:/app/share/recordings_buffer:rw
 
 
   go2rtc:
