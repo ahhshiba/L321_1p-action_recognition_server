@@ -72,8 +72,58 @@ class Recorder(threading.Thread):
         self._last_logged_path: Optional[str] = None
         self._last_logged_mtime: float = 0.0
         self._processed_segments = set()
+        self._ts_state: Dict[str, tuple] = {}
         self._postprocess_faststart = os.getenv("POSTPROCESS_FASTSTART", "1") == "1"
         self._postprocess_stable_seconds = int(os.getenv("POSTPROCESS_STABLE_SECONDS", "2"))
+        self._postprocess_remux_mp4 = os.getenv("POSTPROCESS_REMUX_MP4", "1") == "1"
+
+    def _remux_to_mp4(self, mkv_path: str) -> Optional[str]:
+        if not self._postprocess_remux_mp4:
+            return None
+        if os.path.splitext(mkv_path)[1].lower() != ".mkv":
+            return None
+        mp4_path = f"{os.path.splitext(mkv_path)[0]}.mp4"
+        if os.path.exists(mp4_path):
+            try:
+                if os.path.getsize(mp4_path) > 0:
+                    return mp4_path
+            except OSError:
+                pass
+        tmp_path = f"{mp4_path}.tmp"
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "warning",
+            "-y",
+            "-fflags",
+            "+genpts+discardcorrupt",
+            "-err_detect",
+            "ignore_err",
+            "-i",
+            mkv_path,
+            "-c",
+            "copy",
+            "-movflags",
+            "+faststart",
+            "-f",
+            "mp4",
+            tmp_path,
+        ]
+        result = subprocess.run(cmd)
+        if result.returncode != 0:
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+            logging.warning("MP4 remux failed for %s", mkv_path)
+            return None
+        os.replace(tmp_path, mp4_path)
+        try:
+            os.remove(mkv_path)
+        except OSError:
+            logging.warning("Failed to remove MKV after remux: %s", mkv_path)
+        return mp4_path
 
     def _ensure_dirs_loop(self) -> None:
         while not self.stop_event.is_set():
@@ -84,6 +134,7 @@ class Recorder(threading.Thread):
 
     def _postprocess_segment(self, path: str) -> Optional[str]:
         if not self._postprocess_faststart:
+            logging.info("Postprocess disabled (POSTPROCESS_FASTSTART=0); keep segment %s", path)
             return None
         ext = os.path.splitext(path)[1].lower()
         if ext not in {".ts", ".mp4", ".mkv"}:
@@ -95,11 +146,13 @@ class Recorder(threading.Thread):
         except OSError:
             return None
         if (time.time() - mtime) < self._postprocess_stable_seconds:
+            logging.debug("Postprocess wait stable: %s (age=%.2fs)", path, time.time() - mtime)
             return None
 
         output_path = path
         if ext == ".ts":
             output_path = f"{os.path.splitext(path)[0]}.mkv"
+            logging.info("Postprocess remux %s -> %s", path, output_path)
         tmp_path = f"{output_path}.tmp"
         cmd = [
             "ffmpeg",
@@ -107,6 +160,10 @@ class Recorder(threading.Thread):
             "-loglevel",
             "warning",
             "-y",
+            "-fflags",
+            "+genpts+discardcorrupt",
+            "-err_detect",
+            "ignore_err",
             "-i",
             path,
             "-c",
@@ -135,6 +192,9 @@ class Recorder(threading.Thread):
         if len(self._processed_segments) > 500:
             self._processed_segments = set(list(self._processed_segments)[-250:])
         logging.info("Recorded segment %s", output_path)
+        mp4_path = self._remux_to_mp4(output_path)
+        if mp4_path:
+            logging.info("Remuxed segment to %s", mp4_path)
         return output_path
 
     def _watch_segments(self) -> None:
@@ -149,8 +209,8 @@ class Recorder(threading.Thread):
                     (now - timedelta(days=1)).strftime("%d"),
                 ),
             ]
-            newest_path = None
-            newest_mtime = 0.0
+            ts_candidates = []
+            seen_paths = set()
             for directory in candidate_dirs:
                 if not os.path.isdir(directory):
                     continue
@@ -159,22 +219,33 @@ class Recorder(threading.Thread):
                         if not name.endswith(".ts"):
                             continue
                         path = os.path.join(directory, name)
+                        seen_paths.add(path)
                         try:
                             mtime = os.path.getmtime(path)
+                            size = os.path.getsize(path)
                         except OSError:
                             continue
-                        if mtime > newest_mtime:
-                            newest_mtime = mtime
-                            newest_path = path
+                        ts_candidates.append((mtime, size, path))
                 except OSError:
                     continue
-            if newest_path:
-                output_path = self._postprocess_segment(newest_path)
-                if output_path and (
-                    output_path != self._last_logged_path or newest_mtime > self._last_logged_mtime
-                ):
-                    self._last_logged_path = output_path
-                    self._last_logged_mtime = newest_mtime
+            if ts_candidates:
+                for mtime, size, path in sorted(ts_candidates):
+                    previous = self._ts_state.get(path)
+                    if previous and (size, mtime) == previous:
+                        if (time.time() - mtime) >= self._postprocess_stable_seconds:
+                            output_path = self._postprocess_segment(path)
+                            if output_path and (
+                                output_path != self._last_logged_path or mtime > self._last_logged_mtime
+                            ):
+                                self._last_logged_path = output_path
+                                self._last_logged_mtime = mtime
+                            self._ts_state.pop(path, None)
+                        continue
+                    self._ts_state[path] = (size, mtime)
+            if self._ts_state:
+                for path in list(self._ts_state.keys()):
+                    if path not in seen_paths:
+                        self._ts_state.pop(path, None)
             time.sleep(1)
 
     def run(self) -> None:
@@ -463,14 +534,19 @@ class EventClipper(threading.Thread):
                     continue
                 path_ts = segment_path_ts(self.recordings_dir, camera_id, ts)
                 path_mkv = segment_path(self.recordings_dir, camera_id, ts)
+                path_mp4 = os.path.splitext(path_mkv)[0] + ".mp4"
                 path = None
                 if os.path.exists(path_ts):
                     path = path_ts
+                elif os.path.exists(path_mp4):
+                    path = path_mp4
                 elif os.path.exists(path_mkv):
                     path = path_mkv
                 else:
                     missing = True
-                    last_missing.append(f"missing_file ts={ts.isoformat()} ts_path={path_ts} mkv_path={path_mkv}")
+                    last_missing.append(
+                        f"missing_file ts={ts.isoformat()} ts_path={path_ts} mp4_path={path_mp4} mkv_path={path_mkv}"
+                    )
                     continue
                 if os.path.getsize(path) == 0:
                     missing = True
@@ -506,7 +582,7 @@ class EventClipper(threading.Thread):
             logging.warning("Event clip duration is non-positive for %s", event_id)
             return
 
-        output_name = f"{event_id}.mkv"
+        output_name = f"{event_id}.mp4"
         output_path = os.path.join(self.events_dir, output_name)
         min_event_bytes = int(os.getenv("EVENT_MIN_BYTES", "4096"))
         if os.path.exists(output_path):
@@ -549,8 +625,10 @@ class EventClipper(threading.Thread):
             "-crf",
             "23",
             "-an",
+            "-movflags",
+            "+faststart",
             "-f",
-            "matroska",
+            "mp4",
             output_tmp_path,
         ]
 
@@ -697,7 +775,7 @@ class EventClipper(threading.Thread):
                 fp.write(f"file '{path}'\n")
             fp.write(f"file '{post_tmp_path}'\n")
 
-        output_name = f"{event_id}.mkv"
+        output_name = f"{event_id}.mp4"
         output_path = os.path.join(self.events_dir, output_name)
         min_event_bytes = int(os.getenv("EVENT_MIN_BYTES", "4096"))
         if os.path.exists(output_path):
@@ -751,8 +829,10 @@ class EventClipper(threading.Thread):
             "-crf",
             "23",
             "-an",
+            "-movflags",
+            "+faststart",
             "-f",
-            "matroska",
+            "mp4",
             output_tmp_path,
         ]
 

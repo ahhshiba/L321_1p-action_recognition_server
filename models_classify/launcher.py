@@ -109,7 +109,7 @@ class RunnerLauncher:
         for cam in data.get("cameras", []):
             if cam.get("enabled", True) is False:
                 continue
-            model_id = cam.get("modelId")
+            model_id = cam.get("modelID")
             if not model_id:
                 continue
             cam_id = cam.get("id") or cam.get("name") or "unknown"

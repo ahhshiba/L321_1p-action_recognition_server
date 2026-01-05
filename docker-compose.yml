@@ -159,12 +159,13 @@ services:
   htmlv2:
     user: "${HOST_UID}:${HOST_GID}"
     build:
-      context: ./html16
+      context: ./html63
       dockerfile: Dockerfile
-    container_name: html16_web
+    container_name: html63_web
     restart: unless-stopped
     depends_on:
       - go2rtc
+      - postgres
     environment:
       GO2RTC_API_URL: http://go2rtc:1984
       NEXT_PUBLIC_GO2RTC_URL: http://localhost:1984
@@ -173,6 +174,12 @@ services:
       RECORDINGS_JSON: /app/share/recordings.json
       EVENTS_DIR: /app/share/events
       RECORDINGS_DIR: /app/share/recordings
+      MODELS_JSON: /app/share/models.json
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: vision
+      DATABASE_USER: vision_user
+      DATABASE_PASSWORD: vision_pass
     ports:
       - "3000:3000"
     volumes:

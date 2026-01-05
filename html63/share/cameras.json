@@ -1,0 +1,22 @@
+{
+  "cameras": [
+    {
+      "id": "cam1",
+      "name": "Camera 1",
+      "rtspUrl": "rtsp://example.com/stream1",
+      "enabled": true,
+      "modelID": "",
+      "virtualFences": []
+    },
+    {
+      "id": "cam2",
+      "name": "Camera 2",
+      "rtspUrl": "rtsp://example.com/stream2",
+      "enabled": true,
+      "modelID": "",
+      "virtualFences": []
+    }
+  ],
+  "availableDetectionObjects": ["person", "car", "truck", "bus", "motorcycle", "bicycle"],
+  "webrtcServerUrl": "http://localhost:1984"
+}
