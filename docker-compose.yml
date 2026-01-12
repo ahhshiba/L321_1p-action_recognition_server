@@ -18,6 +18,7 @@ services:
 
   # 你的行為辨識前處理（疊字→回推 RTSP）
   action_recognition_server:
+    image: ${DOCKERHUB_USER}/action-recognition-server:${TAG}
     environment:
       CAMERAS_JSON: /app/share/cameras.json
       EVENTS_JSON: /app/share/events.json
@@ -38,6 +39,7 @@ services:
       - ./share:/app/share:ro         # 只讀 cameras.json
 
   model_launcher:
+    image: ${DOCKERHUB_USER}/model-launcher:${TAG}
     build:
       context: .
       dockerfile: models_classify/Dockerfile
@@ -68,6 +70,7 @@ services:
       - ./models_classify/class:/class:ro
 
   fence:
+    image: ${DOCKERHUB_USER}/fence:${TAG}
     build:
       context: .
       dockerfile: fence/Dockerfile
@@ -92,6 +95,7 @@ services:
       - ./share:/app/share:ro
 
   record:
+    image: ${DOCKERHUB_USER}/record:${TAG}
     build:
       context: .
       dockerfile: record/Dockerfile
@@ -157,6 +161,7 @@ services:
 
 
   htmlv2:
+    image: ${DOCKERHUB_USER}/html63-web:${TAG}
     user: "${HOST_UID}:${HOST_GID}"
     build:
       context: ./html63
