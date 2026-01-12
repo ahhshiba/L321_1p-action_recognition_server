@@ -164,75 +164,72 @@ class RunnerLauncher:
             except (TypeError, ValueError):
                 log(f"WARNING: invalid inputSize for model '{model_id}', using default 640x640.")
 
-        cmd = [
-            sys.executable,
-            runner_path,
-            "--weights",
-            str(weights_path),
-            "--input-width",
-            str(width),
-            "--input-height",
-            str(height),
-            "--model-name",
-            str(model_cfg.get("name", model_id)),
-            "--model-id",
-            model_id,
-        ]
+        # 為每個攝影機啟動獨立的 runner 進程
+        for cam_entry in camera_entries:
+            cam_id = cam_entry["id"]
+            input_url = cam_entry["in"]
+            output_url = cam_entry["out"]
 
-        camera_ids = [c["id"] for c in camera_entries] if camera_entries else []
-        if camera_ids:
-            cmd += ["--cameras", ",".join(camera_ids)]
+            cmd = [
+                sys.executable,
+                runner_path,
+                "--weights",
+                str(weights_path),
+                "--input-width",
+                str(width),
+                "--input-height",
+                str(height),
+                "--model-name",
+                str(model_cfg.get("name", model_id)),
+                "--model-id",
+                model_id,
+                "--cameras", cam_id,
+                "--input-url", input_url,
+                "--output-url", output_url,
+            ]
 
-        if camera_entries:
-            cmd += ["--input-url", camera_entries[0]["in"], "--output-url", camera_entries[0]["out"]]
-            if len(camera_entries) > 1:
-                log(
-                    f"INFO: multiple cameras share model '{model_id}', "
-                    f"using first input/output from {camera_entries[0]['id']}"
-                )
+            device = model_cfg.get("device")
+            if device:
+                cmd += ["--device", str(device)]
 
-        device = model_cfg.get("device")
-        if device:
-            cmd += ["--device", str(device)]
+            if class_file:
+                cmd += ["--class-file", str(class_file)]
 
-        if class_file:
-            cmd += ["--class-file", str(class_file)]
+            # 🔽🔽🔽 新增：從環境變數帶 MQTT 參數給 runner 🔽🔽🔽
+            mqtt_host = os.getenv("MQTT_HOST")
+            if mqtt_host:
+                cmd += ["--mqtt-host", mqtt_host]
 
-        # 🔽🔽🔽 新增：從環境變數帶 MQTT 參數給 runner 🔽🔽🔽
-        mqtt_host = os.getenv("MQTT_HOST")
-        if mqtt_host:
-            cmd += ["--mqtt-host", mqtt_host]
+                mqtt_port = os.getenv("MQTT_PORT")
+                if mqtt_port:
+                    cmd += ["--mqtt-port", str(mqtt_port)]
 
-            mqtt_port = os.getenv("MQTT_PORT")
-            if mqtt_port:
-                cmd += ["--mqtt-port", str(mqtt_port)]
+                mqtt_topic = os.getenv("MQTT_TOPIC")
+                if mqtt_topic:
+                    cmd += ["--mqtt-topic", mqtt_topic]
 
-            mqtt_topic = os.getenv("MQTT_TOPIC")
-            if mqtt_topic:
-                cmd += ["--mqtt-topic", mqtt_topic]
+                mqtt_username = os.getenv("MQTT_USERNAME")
+                if mqtt_username:
+                    cmd += ["--mqtt-username", mqtt_username]
+                    mqtt_password = os.getenv("MQTT_PASSWORD")
+                    if mqtt_password:
+                        cmd += ["--mqtt-password", mqtt_password]
 
-            mqtt_username = os.getenv("MQTT_USERNAME")
-            if mqtt_username:
-                cmd += ["--mqtt-username", mqtt_username]
-                mqtt_password = os.getenv("MQTT_PASSWORD")
-                if mqtt_password:
-                    cmd += ["--mqtt-password", mqtt_password]
+                mqtt_qos = os.getenv("MQTT_QOS")
+                if mqtt_qos:
+                    cmd += ["--mqtt-qos", str(mqtt_qos)]
 
-            mqtt_qos = os.getenv("MQTT_QOS")
-            if mqtt_qos:
-                cmd += ["--mqtt-qos", str(mqtt_qos)]
+            log(f"Starting model '{model_id}' for camera '{cam_id}' with runner {runner_path}")
+            try:
+                proc = subprocess.Popen(cmd)
+            except FileNotFoundError:
+                log(f"ERROR: unable to start runner for '{model_id}' camera '{cam_id}', python executable not found.")
+                continue
+            except Exception as exc:  # pragma: no cover - best effort logging
+                log(f"ERROR: failed to start runner for '{model_id}' camera '{cam_id}': {exc}")
+                continue
 
-        log(f"Starting model '{model_id}' with runner {runner_path} (cameras: {camera_ids})")
-        try:
-            proc = subprocess.Popen(cmd)
-        except FileNotFoundError:
-            log(f"ERROR: unable to start runner for '{model_id}', python executable not found.")
-            return
-        except Exception as exc:  # pragma: no cover - best effort logging
-            log(f"ERROR: failed to start runner for '{model_id}': {exc}")
-            return
-
-        self.processes.append((model_id, proc, cmd))
+            self.processes.append((f"{model_id}_{cam_id}", proc, cmd))
 
 
     def launch(self) -> bool:

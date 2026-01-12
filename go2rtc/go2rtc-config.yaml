@@ -26,5 +26,17 @@ streams:
     - rtsp://localhost:8556/cam1_overlay
   cam1overlay:
     - rtsp://127.0.0.1:8556/cam1overlay
+  cam2_raw:
+    - rtsp://publisher:secret@127.0.0.1:8556/cam2_raw
+  cam2_overlay:
+    - rtsp://localhost:8556/cam2_overlay
+  cam2overlay:
+    - rtsp://127.0.0.1:8556/cam2overlay
+  cam3_raw:
+    - rtsp://publisher:secret@127.0.0.1:8556/cam3_raw
+  cam3_overlay:
+    - rtsp://localhost:8556/cam3_overlay
+  cam3overlay:
+    - rtsp://127.0.0.1:8556/cam3overlay
  
 

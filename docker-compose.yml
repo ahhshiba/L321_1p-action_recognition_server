@@ -1,6 +1,6 @@
 services:
 
-  # 從 /dev/video0 拉原始畫面 → 推到 cam1_raw，供 action_recognition_server 取用
+  # 從 /dev/video0, video2, video4 拉原始畫面 → 推到 cam1_raw, cam2_raw, cam3_raw
   raw_restreamer:
     image: jrottenberg/ffmpeg:6.1-ubuntu
     container_name: raw_restreamer
@@ -8,13 +8,27 @@ services:
     depends_on: [go2rtc]
     devices:
       - /dev/video0:/dev/video0
-    command: >
-      -f v4l2 -input_format yuyv422 -framerate 10 -video_size 640x480 -i /dev/video0
-      -vf format=yuv420p
-      -c:v libx264 -preset veryfast -tune zerolatency
-      -g 20 -keyint_min 20 -b:v 2M -maxrate 2M -bufsize 4M
-      -rtsp_transport tcp
-      -f rtsp rtsp://publisher:secret@go2rtc:8554/cam1_raw
+      - /dev/video2:/dev/video2
+      - /dev/video4:/dev/video4
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        ffmpeg -f v4l2 -input_format mjpeg -framerate 10 -video_size 320x240 -i /dev/video0 \
+          -vf format=yuv420p -c:v libx264 -preset veryfast -tune zerolatency \
+          -g 20 -keyint_min 20 -b:v 800k -maxrate 800k -bufsize 1600k \
+          -rtsp_transport tcp -f rtsp rtsp://publisher:secret@go2rtc:8554/cam1_raw &
+        sleep 5 ;
+        ffmpeg -f v4l2 -input_format mjpeg -framerate 10 -video_size 320x240 -i /dev/video2 \
+          -vf format=yuv420p -c:v libx264 -preset veryfast -tune zerolatency \
+          -g 20 -keyint_min 20 -b:v 800k -maxrate 800k -bufsize 1600k \
+          -rtsp_transport tcp -f rtsp rtsp://publisher:secret@go2rtc:8554/cam2_raw &
+        sleep 5 ;
+        ffmpeg -f v4l2 -input_format mjpeg -framerate 10 -video_size 320x240 -i /dev/video4 \
+          -vf format=yuv420p -c:v libx264 -preset veryfast -tune zerolatency \
+          -g 20 -keyint_min 20 -b:v 800k -maxrate 800k -bufsize 1600k \
+          -rtsp_transport tcp -f rtsp rtsp://publisher:secret@go2rtc:8554/cam3_raw &
+        wait
 
   # 你的行為辨識前處理（疊字→回推 RTSP）
   action_recognition_server:
